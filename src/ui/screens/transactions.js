@@ -9,7 +9,7 @@ import { openSheet, closeSheet, confirmDialog } from '../components/sheet.js';
 import { openDatePicker } from '../components/datepicker.js';
 import { Badge, Input, Select, Textarea, EmptyState, ProgressBar } from '../components/ui.js';
 import { formatToman, formatTomanShort, parseIntAmount } from '../../utils/number.js';
-import { formatJalali, formatTime, toPersianDigits, today, isThisMonth } from '../../utils/date.js';
+import { formatJalali, toPersianDigits, today, isThisMonth } from '../../utils/date.js';
 import { getProjectRemaining } from '../../domain/calculations.js';
 import { suggestAllocation } from '../../domain/allocation.js';
 import { renderShareDistributionHtml, attachShareHandlers, computeShareAmounts, refreshShareSummary } from './expenses.js';
@@ -207,7 +207,7 @@ function renderReceiptItem(item) {
           ${Badge({ variant: 'success', label: 'دریافتی', classes: 'shrink-0' })}
         </div>
         <p class="text-[11px] text-fg-muted mt-0.5 flex items-center gap-1.5 flex-wrap">
-          <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i>${formatJalali(item.date)} · ${formatTime(item.date)}</span>
+          <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i>${formatJalali(item.date)}</span>
           <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i>${partnerName}</span>
           ${item.allocationsCount > 0 ? `<span class="flex items-center gap-1"><i data-lucide="briefcase" class="w-3 h-3"></i>${toPersianDigits(item.allocationsCount)} پروژه</span>` : ''}
         </p>
@@ -256,7 +256,7 @@ function renderTransferItem(item) {
       <div class="flex-1 min-w-0">
         <p class="text-sm font-bold truncate">انتقال از ${fromName} به ${toName}</p>
         <p class="text-[11px] text-fg-muted mt-0.5 flex items-center gap-1.5">
-          <i data-lucide="calendar" class="w-3 h-3"></i>${formatJalali(item.date)} · ${formatTime(item.date)}
+          <i data-lucide="calendar" class="w-3 h-3"></i>${formatJalali(item.date)}
         </p>
       </div>
       <div class="text-left shrink-0"><p class="text-sm font-bold text-fg-muted tabular-nums">${formatTomanShort(item.amount)}</p></div>
