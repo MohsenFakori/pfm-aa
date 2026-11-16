@@ -20,6 +20,49 @@ const COLOR_GRADIENTS = {
 
 let expenseFormState = null;
 let transferFormState = null;
+let expenseAmountWordsTimer = null;
+
+function toLatinDigits(value) {
+  return String(value ?? '')
+    .replace(/[۰-۹]/g, digit => '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit))
+    .replace(/[٠-٩]/g, digit => '٠١٢٣٤٥٦٧٨٩'.indexOf(digit));
+}
+
+function formatAmountInput(value) {
+  const digits = toLatinDigits(value).replace(/[^\d]/g, '');
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function amountToPersianWords(value) {
+  const number = Number(value);
+  if (!Number.isSafeInteger(number) || number <= 0) return '';
+  const ones = ['','یک','دو','سه','چهار','پنج','شش','هفت','هشت','نه'];
+  const teens = ['ده','یازده','دوازده','سیزده','چهارده','پانزده','شانزده','هفده','هجده','نوزده'];
+  const tens = ['','','بیست','سی','چهل','پنجاه','شصت','هفتاد','هشتاد','نود'];
+  const hundreds = ['','صد','دویست','سیصد','چهارصد','پانصد','ششصد','هفتصد','هشتصد','نهصد'];
+  const scales = ['', 'هزار', 'میلیون', 'میلیارد', 'تریلیون'];
+  const underThousand = (n) => {
+    const parts = [];
+    if (n >= 100) parts.push(hundreds[Math.floor(n / 100)]);
+    n %= 100;
+    if (n >= 20) {
+      parts.push(tens[Math.floor(n / 10)]);
+      if (n % 10) parts.push(ones[n % 10]);
+    } else if (n >= 10) parts.push(teens[n - 10]);
+    else if (n > 0) parts.push(ones[n]);
+    return parts.join(' و ');
+  };
+  const parts = [];
+  let remaining = number;
+  let scaleIndex = 0;
+  while (remaining > 0) {
+    const chunk = remaining % 1000;
+    if (chunk) parts.unshift(underThousand(chunk) + (scales[scaleIndex] ? ' ' + scales[scaleIndex] : ''));
+    remaining = Math.floor(remaining / 1000);
+    scaleIndex++;
+  }
+  return parts.join(' و ');
+}
 
 function defaultExpenseFormState() {
   return { title: '', amount: '', paidByPartnerId: '', date: today(), note: '', shares: {} };
@@ -194,6 +237,8 @@ export function renderAddExpensePage() {
   `;
   if (window.lucide) window.lucide.createIcons();
   attachExpenseFormListeners();
+  const amountInput = main.querySelector('[name="amount"]');
+  if (amountInput) amountInput.focus();
   window.__navigate = (path) => navigate(path);
   window.__saveExpense = saveExpense;
   window.__openExpenseDate = openExpenseDate;
@@ -215,7 +260,8 @@ function renderExpenseForm() {
     <div class="space-y-3">
       ${partnerWarning}
       ${Input({ name: 'title', label: 'عنوان هزینه', placeholder: 'مثلاً: خرید سرور', value: expenseFormState.title, required: true, icon: 'receipt' })}
-      ${Input({ name: 'amount', type: 'text', label: 'مبلغ', placeholder: 'مبلغ به تومان', value: expenseFormState.amount, required: true, suffix: 'تومان', inputmode: 'numeric' })}
+      ${Input({ name: 'amount', type: 'text', label: 'مبلغ', placeholder: 'مبلغ به تومان', value: formatAmountInput(expenseFormState.amount), required: true, suffix: 'تومان', inputmode: 'numeric' })}
+      <p data-expense-amount-words class="text-[11px] text-fg-muted -mt-1 min-h-4" aria-live="polite"></p>
       <div>
         <label class="text-xs text-fg-muted mb-1.5 block">تاریخ <span class="text-danger">*</span></label>
         <button onclick="window.__openExpenseDate()" class="w-full h-11 px-4 rounded-xl bg-ink-soft border border-line focus:border-brand outline-none text-sm transition flex items-center justify-between">
@@ -236,11 +282,41 @@ function attachExpenseFormListeners() {
   const titleInput = main.querySelector('[name="title"]');
   if (titleInput) titleInput.addEventListener('input', (e) => { expenseFormState.title = e.target.value; });
   const amountInput = main.querySelector('[name="amount"]');
-  if (amountInput) amountInput.addEventListener('input', (e) => {
-    expenseFormState.amount = e.target.value;
-    const partners = (state.data.partners || []).filter(p => !p.deletedAt);
-    refreshShareSummary(expenseFormState, partners);
-  });
+  const amountWords = main.querySelector('[data-expense-amount-words]');
+  const updateAmountWords = () => {
+    if (!amountWords) return;
+    const amount = parseIntAmount(expenseFormState.amount);
+    amountWords.textContent = amount > 0 ? amountToPersianWords(amount) + ' تومان' : '';
+  };
+
+  if (amountInput) {
+    expenseFormState.amount = toLatinDigits(expenseFormState.amount).replace(/[^\d]/g, '');
+    amountInput.value = formatAmountInput(expenseFormState.amount);
+    updateAmountWords();
+    amountInput.addEventListener('input', (e) => {
+      const input = e.target;
+      const cursor = input.selectionStart ?? input.value.length;
+      const digitsBeforeCursor = toLatinDigits(input.value.slice(0, cursor)).replace(/[^\d]/g, '').length;
+      const rawValue = toLatinDigits(input.value).replace(/[^\d]/g, '');
+      expenseFormState.amount = rawValue;
+      input.value = formatAmountInput(rawValue);
+
+      let nextCursor = 0;
+      let seenDigits = 0;
+      while (nextCursor < input.value.length && seenDigits < digitsBeforeCursor) {
+        if (/\d/.test(input.value[nextCursor])) seenDigits++;
+        nextCursor++;
+      }
+      input.setSelectionRange(nextCursor, nextCursor);
+
+      clearTimeout(expenseAmountWordsTimer);
+      if (amountWords) amountWords.textContent = rawValue ? 'در حال تبدیل مبلغ…' : '';
+      expenseAmountWordsTimer = setTimeout(updateAmountWords, 650);
+
+      const partners = (state.data.partners || []).filter(p => !p.deletedAt);
+      refreshShareSummary(expenseFormState, partners);
+    });
+  }
   const paidBySelect = main.querySelector('[name="paidByPartnerId"]');
   if (paidBySelect) paidBySelect.addEventListener('change', (e) => {
     expenseFormState.paidByPartnerId = e.target.value;
