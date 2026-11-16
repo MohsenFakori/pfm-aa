@@ -34,6 +34,51 @@ let activeProjectTab = 'receipts';
 let currentDetailParams = null;
 let projectFormState = null;
 
+function formatAmountInput(value) {
+  const digits = toLatinDigits(String(value ?? '')).replace(/[^\\d]/g, '');
+  return digits.replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.');
+}
+
+function amountToPersianWords(value) {
+  const number = Number(value);
+  if (!Number.isSafeInteger(number) || number <= 0) return '';
+
+  const ones = ['','یک','دو','سه','چهار','پنج','شش','هفت','هشت','نه'];
+  const teens = ['ده','یازده','دوازده','سیزده','چهارده','پانزده','شانزده','هفده','هجده','نوزده'];
+  const tens = ['','','بیست','سی','چهل','پنجاه','شصت','هفتاد','هشتاد','نود'];
+  const hundreds = ['','صد','دویست','سیصد','چهارصد','پانصد','ششصد','هفتصد','هشتصد','نهصد'];
+  const scales = ['', 'هزار', 'میلیون', 'میلیارد', 'تریلیون'];
+
+  const underThousand = (n) => {
+    const parts = [];
+    if (n >= 100) parts.push(hundreds[Math.floor(n / 100)]);
+    n %= 100;
+    if (n >= 20) {
+      parts.push(tens[Math.floor(n / 10)]);
+      if (n % 10) parts.push(ones[n % 10]);
+    } else if (n >= 10) {
+      parts.push(teens[n - 10]);
+    } else if (n > 0) {
+      parts.push(ones[n]);
+    }
+    return parts.join(' و ');
+  };
+
+  const parts = [];
+  let remaining = number;
+  let scaleIndex = 0;
+  while (remaining > 0) {
+    const chunk = remaining % 1000;
+    if (chunk) {
+      const words = underThousand(chunk);
+      parts.unshift(scales[scaleIndex] ? words + ' ' + scales[scaleIndex] : words);
+    }
+    remaining = Math.floor(remaining / 1000);
+    scaleIndex++;
+  }
+  return parts.join(' و ');
+}
+
 function defaultProjectFormState() {
   return {
     step: 1, editId: null,
@@ -521,10 +566,11 @@ function renderStep1() {
       <div>
         <label class="text-xs text-fg-muted mb-1.5 block">مبلغ پروژه</label>
         <div class="relative">
-          <input type="text" name="amount" placeholder="مبلغ به تومان" value="${projectFormState.amount}" inputmode="numeric" ${projectFormState.amountUndetermined ? 'disabled' : ''}
+          <input type="text" name="amount" placeholder="مبلغ به تومان" value="${formatAmountInput(projectFormState.amount)}" inputmode="numeric" ${projectFormState.amountUndetermined ? 'disabled' : ''}
             class="w-full h-11 pr-4 pl-20 rounded-xl bg-ink-soft border border-line focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none text-sm transition tabular-nums ${projectFormState.amountUndetermined ? 'opacity-50 cursor-not-allowed' : ''}" />
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-fg-muted bg-white/5 px-2 py-1 rounded-md pointer-events-none">تومان</span>
         </div>
+        <p data-amount-words class="text-[11px] text-fg-muted mt-2 min-h-4" aria-live="polite"></p>
         <div class="mt-3 flex items-center justify-between gap-3">
           <span class="text-xs text-fg-muted">فعلاً مبلغ پروژه مشخص نیست</span>
           <button type="button" data-toggle-amount-undetermined role="switch"
@@ -652,7 +698,43 @@ function attachProjectFormListeners() {
   if (employerSelect) employerSelect.addEventListener('change', (e) => { projectFormState.employerId = e.target.value; });
 
   const amountInput = formSheet.querySelector('[name="amount"]');
-  if (amountInput) amountInput.addEventListener('input', (e) => { projectFormState.amount = e.target.value; });
+  const amountWords = formSheet.querySelector('[data-amount-words]');
+  let amountWordsTimer = null;
+
+  const updateAmountWords = () => {
+    if (!amountWords) return;
+    const amount = parseIntAmount(projectFormState.amount);
+    amountWords.textContent = amount > 0
+      ? amountToPersianWords(amount) + ' تومان'
+      : '';
+  };
+
+  if (amountInput) {
+    projectFormState.amount = toLatinDigits(String(projectFormState.amount || '')).replace(/[^\\d]/g, '');
+    amountInput.value = formatAmountInput(projectFormState.amount);
+    updateAmountWords();
+
+    amountInput.addEventListener('input', (e) => {
+      const input = e.target;
+      const cursor = input.selectionStart ?? input.value.length;
+      const digitsBeforeCursor = toLatinDigits(input.value.slice(0, cursor)).replace(/[^\\d]/g, '').length;
+      const rawValue = toLatinDigits(input.value).replace(/[^\\d]/g, '');
+      projectFormState.amount = rawValue;
+      input.value = formatAmountInput(rawValue);
+
+      let nextCursor = 0;
+      let seenDigits = 0;
+      while (nextCursor < input.value.length && seenDigits < digitsBeforeCursor) {
+        if (/\\d/.test(input.value[nextCursor])) seenDigits++;
+        nextCursor++;
+      }
+      input.setSelectionRange(nextCursor, nextCursor);
+
+      clearTimeout(amountWordsTimer);
+      if (amountWords) amountWords.textContent = rawValue ? '...' : '';
+      amountWordsTimer = setTimeout(updateAmountWords, 650);
+    });
+  }
 
   const amountUndeterminedToggle = formSheet.querySelector('[data-toggle-amount-undetermined]');
   if (amountUndeterminedToggle) amountUndeterminedToggle.addEventListener('click', () => {
@@ -756,7 +838,7 @@ function syncProjectFormInputs() {
   if (employerSelect) projectFormState.employerId = employerSelect.value;
 
   const amountInput = formSheet.querySelector('[name="amount"]');
-  if (amountInput) projectFormState.amount = amountInput.value;
+  if (amountInput) projectFormState.amount = toLatinDigits(String(amountInput.value || '')).replace(/[^\\d]/g, '');
 
   const amountUndeterminedInput = formSheet.querySelector('[name="amountUndetermined"]');
   if (amountUndeterminedInput) projectFormState.amountUndetermined = amountUndeterminedInput.checked;
