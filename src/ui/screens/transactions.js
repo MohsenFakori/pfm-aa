@@ -27,6 +27,74 @@ let transactionFormState = null;
 let editReceiptState = null;
 let editExpenseState = null;
 let editTransferState = null;
+let transactionAmountWordsTimer = null;
+
+function formatTransactionAmount(value) {
+  const digits = toLatinDigits(value).replace(/[^\d]/g, '');
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function transactionAmountToWords(value) {
+  const number = Number(value);
+  if (!Number.isSafeInteger(number) || number <= 0) return '';
+  const ones = ['','یک','دو','سه','چهار','پنج','شش','هفت','هشت','نه'];
+  const teens = ['ده','یازده','دوازده','سیزده','چهارده','پانزده','شانزده','هفده','هجده','نوزده'];
+  const tens = ['','','بیست','سی','چهل','پنجاه','شصت','هفتاد','هشتاد','نود'];
+  const hundreds = ['','صد','دویست','سیصد','چهارصد','پانصد','ششصد','هفتصد','هشتصد','نهصد'];
+  const scales = ['', 'هزار', 'میلیون', 'میلیارد', 'تریلیون'];
+  const underThousand = (n) => {
+    const parts = [];
+    if (n >= 100) parts.push(hundreds[Math.floor(n / 100)]);
+    n %= 100;
+    if (n >= 20) { parts.push(tens[Math.floor(n / 10)]); if (n % 10) parts.push(ones[n % 10]); }
+    else if (n >= 10) parts.push(teens[n - 10]);
+    else if (n > 0) parts.push(ones[n]);
+    return parts.join(' و ');
+  };
+  const parts = [];
+  let remaining = number;
+  let scaleIndex = 0;
+  while (remaining > 0) {
+    const chunk = remaining % 1000;
+    if (chunk) parts.unshift(underThousand(chunk) + (scales[scaleIndex] ? ' ' + scales[scaleIndex] : ''));
+    remaining = Math.floor(remaining / 1000);
+    scaleIndex++;
+  }
+  return parts.join(' و ');
+}
+
+function attachTransactionAmountInput(input, formState, wordsElement, onAmountChange) {
+  if (!input) return;
+  formState.amount = toLatinDigits(formState.amount).replace(/[^\d]/g, '');
+  input.value = formatTransactionAmount(formState.amount);
+  const updateWords = () => {
+    if (wordsElement) {
+      const words = transactionAmountToWords(formState.amount);
+      wordsElement.textContent = words ? words + ' تومان' : '';
+    }
+    if (onAmountChange) onAmountChange(parseIntAmount(formState.amount));
+  };
+  updateWords();
+  input.addEventListener('input', (event) => {
+    const target = event.target;
+    const cursor = target.selectionStart ?? target.value.length;
+    const digitsBeforeCursor = toLatinDigits(target.value.slice(0, cursor)).replace(/[^\d]/g, '').length;
+    const rawValue = toLatinDigits(target.value).replace(/[^\d]/g, '');
+    formState.amount = rawValue;
+    target.value = formatTransactionAmount(rawValue);
+    let nextCursor = 0;
+    let seenDigits = 0;
+    while (nextCursor < target.value.length && seenDigits < digitsBeforeCursor) {
+      if (/\d/.test(target.value[nextCursor])) seenDigits++;
+      nextCursor++;
+    }
+    target.setSelectionRange(nextCursor, nextCursor);
+    clearTimeout(transactionAmountWordsTimer);
+    if (wordsElement) wordsElement.textContent = rawValue ? 'در حال تبدیل مبلغ…' : '';
+    transactionAmountWordsTimer = setTimeout(updateWords, 650);
+    if (onAmountChange) onAmountChange(parseIntAmount(rawValue));
+  });
+}
 
 function defaultTransactionFormState() {
   return {
@@ -441,7 +509,8 @@ function renderStep1() {
         <div class="text-center py-3 mb-2">
           <p class="text-2xl font-bold tabular-nums ${amount > 0 ? 'text-success' : 'text-fg-muted'}" id="amount-display">${amountDisplay}</p>
         </div>
-        ${Input({ name: 'amount', type: 'text', placeholder: 'مبلغ به تومان', value: transactionFormState.amount, suffix: 'تومان', inputmode: 'numeric' })}
+        ${Input({ name: 'amount', type: 'text', placeholder: 'مبلغ به تومان', value: formatTransactionAmount(transactionFormState.amount), suffix: 'تومان', inputmode: 'numeric' })}
+        <p data-transaction-amount-words class="text-[11px] text-fg-muted mt-1 min-h-4" aria-live="polite"></p>
         <div class="flex gap-2 mt-2">
           <button type="button" onclick="window.__addQuickAmount(100000)" class="flex-1 h-9 rounded-lg glass text-xs font-medium hover:bg-white/10 transition">+ ۱۰۰هزار</button>
           <button type="button" onclick="window.__addQuickAmount(500000)" class="flex-1 h-9 rounded-lg glass text-xs font-medium hover:bg-white/10 transition">+ ۵۰۰هزار</button>
@@ -595,11 +664,9 @@ function attachFormListeners() {
     transactionFormState.allocationDirty = {};
   });
   const amountInput = main.querySelector('[name="amount"]');
-  if (amountInput) amountInput.addEventListener('input', (e) => {
-    transactionFormState.amount = e.target.value;
+  attachTransactionAmountInput(amountInput, transactionFormState, main.querySelector('[data-transaction-amount-words]'), (amt) => {
     const display = document.getElementById('amount-display');
     if (display) {
-      const amt = parseIntAmount(e.target.value);
       display.textContent = amt > 0 ? formatToman(amt) : '۰ تومان';
       display.className = `text-2xl font-bold tabular-nums ${amt > 0 ? 'text-success' : 'text-fg-muted'}`;
     }
@@ -744,7 +811,7 @@ function syncTransactionFormInputs() {
   if (employerSelect) transactionFormState.employerId = employerSelect.value;
 
   const amountInput = main.querySelector('[name="amount"]');
-  if (amountInput) transactionFormState.amount = amountInput.value;
+  if (amountInput) transactionFormState.amount = toLatinDigits(amountInput.value).replace(/[^\d]/g, '');
 
   const receiverSelect = main.querySelector('[name="receiverPartnerId"]');
   if (receiverSelect) transactionFormState.receiverPartnerId = receiverSelect.value;
@@ -981,7 +1048,8 @@ function renderReceiptEditForm() {
       </div>
       <div class="space-y-3">
         ${Select({ name: 'editEmployerId', label: 'کارفرما', options: employerOptions, value: editReceiptState.employerId, required: true, placeholder: 'انتخاب کارفرما', icon: 'briefcase' })}
-        ${Input({ name: 'editAmount', type: 'text', label: 'مبلغ دریافتی', placeholder: 'مبلغ به تومان', value: editReceiptState.amount, required: true, suffix: 'تومان', inputmode: 'numeric' })}
+        ${Input({ name: 'editAmount', type: 'text', label: 'مبلغ دریافتی', placeholder: 'مبلغ به تومان', value: formatTransactionAmount(editReceiptState.amount), required: true, suffix: 'تومان', inputmode: 'numeric' })}
+        <p data-edit-receipt-amount-words class="text-[11px] text-fg-muted -mt-1 min-h-4" aria-live="polite"></p>
         <div>
           <label class="text-xs text-fg-muted mb-1.5 block">تاریخ دریافت <span class="text-danger">*</span></label>
           <button onclick="window.__openReceiptEditDate()" class="w-full h-11 px-4 rounded-xl bg-ink-soft border border-line focus:border-brand outline-none text-sm transition flex items-center justify-between">
@@ -1008,7 +1076,7 @@ function attachReceiptEditListeners() {
   const employerSelect = sheet.querySelector('[name="editEmployerId"]');
   if (employerSelect) employerSelect.addEventListener('change', (e) => { editReceiptState.employerId = e.target.value; });
   const amountInput = sheet.querySelector('[name="editAmount"]');
-  if (amountInput) amountInput.addEventListener('input', (e) => { editReceiptState.amount = e.target.value; });
+  attachTransactionAmountInput(amountInput, editReceiptState, sheet.querySelector('[data-edit-receipt-amount-words]'));
   const receiverSelect = sheet.querySelector('[name="editReceiverPartnerId"]');
   if (receiverSelect) receiverSelect.addEventListener('change', (e) => { editReceiptState.receiverPartnerId = e.target.value; });
   const noteInput = sheet.querySelector('[name="editNote"]');
@@ -1042,7 +1110,7 @@ async function saveReceiptEdit() {
     const employerSelect = sheet.querySelector('[name="editEmployerId"]');
     if (employerSelect) editReceiptState.employerId = employerSelect.value;
     const amountInput = sheet.querySelector('[name="editAmount"]');
-    if (amountInput) editReceiptState.amount = amountInput.value;
+    if (amountInput) editReceiptState.amount = toLatinDigits(amountInput.value).replace(/[^\d]/g, '');
     const receiverSelect = sheet.querySelector('[name="editReceiverPartnerId"]');
     if (receiverSelect) editReceiptState.receiverPartnerId = receiverSelect.value;
     const noteInput = sheet.querySelector('[name="editNote"]');
@@ -1273,7 +1341,8 @@ function renderTransferEditForm() {
       <div class="space-y-3">
         ${Select({ name: 'editFromPartnerId', label: 'از شریک', options: partnerOptions, value: editTransferState.fromPartnerId, required: true, placeholder: 'انتخاب شریک مبدأ', icon: 'user' })}
         ${Select({ name: 'editToPartnerId', label: 'به شریک', options: partnerOptions, value: editTransferState.toPartnerId, required: true, placeholder: 'انتخاب شریک مقصد', icon: 'user' })}
-        ${Input({ name: 'editAmount', type: 'text', label: 'مبلغ', placeholder: 'مبلغ به تومان', value: editTransferState.amount, required: true, suffix: 'تومان', inputmode: 'numeric' })}
+        ${Input({ name: 'editAmount', type: 'text', label: 'مبلغ', placeholder: 'مبلغ به تومان', value: formatTransactionAmount(editTransferState.amount), required: true, suffix: 'تومان', inputmode: 'numeric' })}
+        <p data-edit-transfer-amount-words class="text-[11px] text-fg-muted -mt-1 min-h-4" aria-live="polite"></p>
         <div>
           <label class="text-xs text-fg-muted mb-1.5 block">تاریخ <span class="text-danger">*</span></label>
           <button onclick="window.__openTransferEditDate()" class="w-full h-11 px-4 rounded-xl bg-ink-soft border border-line focus:border-brand outline-none text-sm transition flex items-center justify-between">
@@ -1301,7 +1370,7 @@ function attachTransferEditListeners() {
   const toSelect = sheet.querySelector('[name="editToPartnerId"]');
   if (toSelect) toSelect.addEventListener('change', (e) => { editTransferState.toPartnerId = e.target.value; });
   const amountInput = sheet.querySelector('[name="editAmount"]');
-  if (amountInput) amountInput.addEventListener('input', (e) => { editTransferState.amount = e.target.value; });
+  attachTransactionAmountInput(amountInput, editTransferState, sheet.querySelector('[data-edit-transfer-amount-words]'));
   const noteInput = sheet.querySelector('[name="editNote"]');
   if (noteInput) noteInput.addEventListener('input', (e) => { editTransferState.note = e.target.value; });
 }
@@ -1335,7 +1404,7 @@ async function saveTransferEdit() {
     const toSelect = sheet.querySelector('[name="editToPartnerId"]');
     if (toSelect) editTransferState.toPartnerId = toSelect.value;
     const amountInput = sheet.querySelector('[name="editAmount"]');
-    if (amountInput) editTransferState.amount = amountInput.value;
+    if (amountInput) editTransferState.amount = toLatinDigits(amountInput.value).replace(/[^\d]/g, '');
     const noteInput = sheet.querySelector('[name="editNote"]');
     if (noteInput) editTransferState.note = noteInput.value;
   }
