@@ -95,7 +95,7 @@ function renderEquipmentCard(eq) {
   const owner = (state.data.partners || []).find(p => p.id === eq.ownerPartnerId);
   const firstLetter = owner ? (owner.name || '').charAt(0) : '?';
   return `
-    <div onclick="window.__editEquipment('${eq.id}')" class="glass rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/8 transition active:scale-[0.98]">
+    <div onclick="window.__editEquipment('${eq.id}')" class="glass rounded-2xl p-3.5 flex items-center gap-3 hover:bg-white/8 transition active:scale-[0.98]">
       <div class="w-11 h-11 rounded-xl bg-brand/15 flex items-center justify-center shrink-0">
         <i data-lucide="tool" class="w-5 h-5 text-brand"></i>
       </div>
