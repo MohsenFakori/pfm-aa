@@ -88,7 +88,7 @@ export function openDatePicker({ value, onSelect, onClose } = {}) {
         cell.month === selectedJ.jm &&
         cell.day === selectedJ.jd;
 
-      let classes = 'h-11 rounded-lg flex items-center justify-center text-sm transition cursor-pointer ';
+      let classes = 'h-11 rounded-lg flex items-center justify-center text-sm transition ';
       if (isSelected) {
         classes += 'bg-brand text-white font-bold shadow-lg shadow-brand/30';
       } else if (isToday) {
