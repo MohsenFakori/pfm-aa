@@ -52,14 +52,21 @@ function renderHeader() {
     else title = 'مدیریت مالی';
   }
 
-  const showBack = current.startsWith('/project/') ||
-                   ['/transaction/add', '/expense/add', '/transfer/add', '/activity/add', '/project/add'].includes(current);
+  const backRoutes = {
+    '/transaction/add': '/transactions',
+    '/expense/add': '/transactions',
+    '/transfer/add': '/transactions',
+    '/activity/add': '/activity',
+    '/project/add': '/projects'
+  };
+  const backPath = current.startsWith('/project/') ? '/projects' : backRoutes[current];
+  const showBack = Boolean(backPath);
 
   return `
     <header class="sticky top-0 z-40 bg-ink/80 backdrop-blur-xl border-b border-line">
       <div class="px-4 h-16 flex items-center justify-between">
         ${showBack
-          ? `<button onclick="history.back()" class="w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="بازگشت">
+          ? `<button onclick="window.__navigate('${backPath}')" class="w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="بازگشت">
               <i data-lucide="chevron-right" class="w-5 h-5"></i>
             </button>`
           : `<button onclick="window.__openDrawer()" class="w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="منو">
