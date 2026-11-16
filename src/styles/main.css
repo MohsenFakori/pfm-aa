@@ -196,6 +196,7 @@ input[type=number] { -moz-appearance: textfield; }
 
 /* Pointer cursor for all interactive elements */
 button:not(:disabled),
+select,
 a[href],
 [role="button"]:not(:disabled),
 [onclick]:not(:disabled):not([aria-disabled="true"]),
