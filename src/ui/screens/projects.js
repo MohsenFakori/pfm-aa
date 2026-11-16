@@ -1188,7 +1188,9 @@ function renderStatusSelector(project, remaining) {
           const onclickAttr = isEnabled && !isActive
             ? `onclick="window.__changeProjectStatus('${project.id}', '${opt.value}')"`
             : '';
-          const tooltip = !isEnabled && !opt.alwaysEnabled ? 'data-tooltip="ابتدا پروژه باید تسویه شود"' : '';
+          const tooltip = !isEnabled && !opt.alwaysEnabled
+            ? `data-tooltip="${project.amountUndetermined ? 'ابتدا مبلغ پروژه را مشخص کنید' : 'ابتدا پروژه باید تسویه شود'}"`
+            : '';
           return `
             <button ${onclickAttr} ${tooltip} class="flex-1 h-9 rounded-lg text-xs font-medium transition ${baseClass}">
               ${opt.label}
