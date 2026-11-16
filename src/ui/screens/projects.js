@@ -146,7 +146,7 @@ function renderProjectCard(project) {
   return `
     <div onclick="window.__navigate('/project/${project.id}')" class="glass rounded-2xl p-4 hover:bg-white/8 transition active:scale-[0.98]">
       <div class="flex items-start justify-between mb-3">
-        <div class="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer">
+        <div class="flex items-center gap-2.5 flex-1 min-w-0">
           <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background: ${colorHex}20;">
             <i data-lucide="briefcase" class="w-5 h-5" style="color: ${colorHex};"></i>
           </div>
@@ -585,7 +585,7 @@ function renderStep2() {
           return `
             <div class="glass rounded-xl p-3 ${isSelected ? 'border border-brand/40' : ''}">
               <div class="flex items-center gap-3">
-                <label class="flex items-center gap-2.5 flex-1 min-w-0">
+                <label class="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer">
                   <input type="checkbox" data-partner-id="${partner.id}" ${isSelected ? 'checked' : ''} onchange="window.__togglePartner('${partner.id}')" class="w-4 h-4 rounded accent-brand" />
                   <div class="w-8 h-8 rounded-full bg-gradient-to-br ${COLOR_GRADIENTS[partner.avatarColor || 'brand']} flex items-center justify-center text-white font-bold text-xs shrink-0">
                     ${(partner.name || '').charAt(0)}
