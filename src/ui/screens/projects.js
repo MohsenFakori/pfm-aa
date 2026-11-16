@@ -187,6 +187,7 @@ function renderProjectCard(project) {
   const statusConfig = STATUS_CONFIG[project.status];
   const statusVariant = { active: 'warning', completed: 'success', archived: 'default' }[project.status];
   const deadline = project.endDate || project.startDate;
+  const employer = (state.data.employers || []).find(e => e.id === project.employerId && !e.deletedAt);
 
   return `
     <div onclick="window.__navigate('/project/${project.id}')" class="glass rounded-2xl p-4 hover:bg-white/8 transition active:scale-[0.98]">
@@ -197,6 +198,10 @@ function renderProjectCard(project) {
           </div>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-bold truncate">${project.title}</p>
+            <p class="text-[10px] text-fg-muted flex items-center gap-1 mt-0.5 truncate">
+              <i data-lucide="user" class="w-3 h-3 shrink-0"></i>
+              <span class="truncate">${employer ? employer.name : 'بدون کارفرما'}</span>
+            </p>
             <p class="text-[10px] text-fg-muted flex items-center gap-1 mt-0.5">
               <i data-lucide="calendar" class="w-3 h-3"></i>
               ${deadline ? formatJalali(deadline) : 'بدون مهلت'}
@@ -547,7 +552,7 @@ function renderStep1() {
           از قالب
         </button>
       ` : ''}
-      ${Input({ name: 'title', label: 'عنوان پروژه', placeholder: 'مثلاً: اپلیکیشن فروش', value: projectFormState.title, required: true, icon: 'briefcase' })}
+      ${Input({ name: 'title', label: 'عنوان پروژه', placeholder: 'مثلاً: احمدی - شهرک کارمندان', value: projectFormState.title, required: true, icon: 'briefcase' })}
 
       ${employers.length === 0
         ? `<div class="rounded-xl bg-warning-soft p-3 text-xs text-warning flex items-center gap-2">
