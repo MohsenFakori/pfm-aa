@@ -156,7 +156,7 @@ export function EmptyState({ icon: iconName = 'inbox', title, description, actio
       </div>
       <h5 class="text-base font-bold mb-1">${title}</h5>
       ${description ? `<p class="text-xs text-fg-muted mb-4 max-w-[240px]">${description}</p>` : ''}
-      ${actionLabel ? `<button onclick="${actionOnClick || ''}" class="cursor-pointer h-10 px-4 rounded-xl bg-cta hover:bg-cta-dark text-white text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-cta/30">
+      ${actionLabel ? `<button onclick="${actionOnClick || ''}" class="h-10 px-4 rounded-xl bg-cta hover:bg-cta-dark text-white text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-cta/30">
         ${actionIcon ? icon(actionIcon, 'w-4 h-4') : icon('plus', 'w-4 h-4')}
         <span>${actionLabel}</span>
       </button>` : ''}
