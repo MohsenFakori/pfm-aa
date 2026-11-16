@@ -59,15 +59,15 @@ function renderHeader() {
     <header class="sticky top-0 z-40 bg-ink/80 backdrop-blur-xl border-b border-line">
       <div class="px-4 h-16 flex items-center justify-between">
         ${showBack
-          ? `<button onclick="history.back()" class="cursor-pointer w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="بازگشت">
+          ? `<button onclick="history.back()" class="w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="بازگشت">
               <i data-lucide="chevron-right" class="w-5 h-5"></i>
             </button>`
-          : `<button onclick="window.__openDrawer()" class="cursor-pointer w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="منو">
+          : `<button onclick="window.__openDrawer()" class="w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="منو">
               <i data-lucide="menu" class="w-5 h-5"></i>
             </button>`
         }
         <h1 class="text-sm font-bold">${title}</h1>
-        <button onclick="window.__openSearch()" class="cursor-pointer w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="جستجو">
+        <button onclick="window.__openSearch()" class="w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="جستجو">
           <i data-lucide="search" class="w-5 h-5"></i>
         </button>
       </div>
@@ -81,7 +81,7 @@ function renderBottomNav() {
   const renderItem = (item) => {
     const isActive = current === item.path || (item.path === '/projects' && current.startsWith('/project'));
     return `
-      <button onclick="window.__navigate('${item.path}')" class="cursor-pointer flex flex-col items-center gap-0.5 px-3 py-1.5 ${isActive ? 'text-brand' : 'text-fg-muted'} transition">
+      <button onclick="window.__navigate('${item.path}')" class="flex flex-col items-center gap-0.5 px-3 py-1.5 ${isActive ? 'text-brand' : 'text-fg-muted'} transition">
         <i data-lucide="${item.icon}" class="w-5 h-5"></i>
         <span class="text-[9px] ${isActive ? 'font-medium' : ''}">${item.label}</span>
       </button>
@@ -90,7 +90,7 @@ function renderBottomNav() {
 
   // FAB مرکزی برای ثبت تراکنش
   const fab = `
-    <button onclick="window.__navigate('/transaction/add')" class="cursor-pointer flex flex-col items-center gap-0.5 -mt-6 transition">
+    <button onclick="window.__navigate('/transaction/add')" class="flex flex-col items-center gap-0.5 -mt-6 transition">
       <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cta to-cta-dark flex items-center justify-center shadow-xl shadow-cta/40 border-4 border-ink-soft active:scale-95 transition">
         <i data-lucide="plus" class="w-6 h-6 text-white"></i>
       </div>
@@ -116,7 +116,7 @@ function renderDrawer() {
   const itemsHtml = DRAWER_ITEMS.map(item => {
     const isActive = (getCurrentRoute() || '').startsWith(item.path);
     return `
-      <button onclick="window.__navigate('${item.path}'); window.closeDrawer();" class="cursor-pointer w-full p-3 flex items-center gap-3 rounded-xl ${isActive ? 'bg-brand/15 text-brand' : 'hover:bg-white/5'} transition text-right">
+      <button onclick="window.__navigate('${item.path}'); window.closeDrawer();" class="w-full p-3 flex items-center gap-3 rounded-xl ${isActive ? 'bg-brand/15 text-brand' : 'hover:bg-white/5'} transition text-right">
         <div class="w-8 h-8 rounded-lg ${isActive ? 'bg-brand/20' : 'glass'} flex items-center justify-center">
           <i data-lucide="${item.icon}" class="w-4 h-4"></i>
         </div>
@@ -135,7 +135,7 @@ function renderDrawer() {
           <p class="text-sm font-bold">${userName}</p>
           <p class="text-[10px] text-fg-muted">حساب شخصی</p>
         </div>
-        <button onclick="window.closeDrawer()" class="cursor-pointer w-8 h-8 rounded-lg glass flex items-center justify-center" aria-label="بستن">
+        <button onclick="window.closeDrawer()" class="w-8 h-8 rounded-lg glass flex items-center justify-center" aria-label="بستن">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -185,7 +185,7 @@ function openSearch() {
     <div class="pb-2">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-base font-bold">جستجو</h3>
-        <button onclick="window.__closeSearch()" class="cursor-pointer w-8 h-8 rounded-lg glass flex items-center justify-center">
+        <button onclick="window.__closeSearch()" class="w-8 h-8 rounded-lg glass flex items-center justify-center">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
