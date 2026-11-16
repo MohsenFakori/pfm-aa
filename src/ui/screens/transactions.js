@@ -197,7 +197,7 @@ function renderReceiptItem(item) {
   const employerName = item.employer?.name || 'کارفرما';
   const partnerName = item.partner?.name || '—';
   return `
-    <div class="glass rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/8 transition active:scale-[0.98]" onclick="window.__editReceipt('${item.id}')">
+    <div class="glass rounded-2xl p-3.5 flex items-center gap-3 hover:bg-white/8 transition active:scale-[0.98]" onclick="window.__editReceipt('${item.id}')">
       <div class="w-10 h-10 rounded-xl bg-success-soft text-success flex items-center justify-center shrink-0">
         <i data-lucide="arrow-down-left" class="w-5 h-5"></i>
       </div>
@@ -223,7 +223,7 @@ function renderReceiptItem(item) {
 function renderExpenseItem(item) {
   const partnerName = item.partner?.name || '—';
   return `
-    <div class="glass rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/8 transition active:scale-[0.98]" onclick="window.__editExpense('${item.id}')">
+    <div class="glass rounded-2xl p-3.5 flex items-center gap-3 hover:bg-white/8 transition active:scale-[0.98]" onclick="window.__editExpense('${item.id}')">
       <div class="w-10 h-10 rounded-xl bg-danger-soft text-danger flex items-center justify-center shrink-0">
         <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
       </div>
@@ -249,7 +249,7 @@ function renderTransferItem(item) {
   const fromName = item.fromPartner?.name || 'شریک';
   const toName = item.toPartner?.name || 'شریک';
   return `
-    <div class="glass rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/8 transition active:scale-[0.98]" onclick="window.__editTransfer('${item.id}')">
+    <div class="glass rounded-2xl p-3.5 flex items-center gap-3 hover:bg-white/8 transition active:scale-[0.98]" onclick="window.__editTransfer('${item.id}')">
       <div class="w-10 h-10 rounded-xl bg-info-soft text-purple-300 flex items-center justify-center shrink-0">
         <i data-lucide="arrow-right-left" class="w-5 h-5"></i>
       </div>
@@ -504,7 +504,7 @@ function renderStep2() {
           return `
             <div class="glass rounded-xl p-3 ${isSelected ? 'border border-brand/40' : ''}">
               <div class="flex items-center gap-3">
-                <label class="flex items-center gap-2.5 flex-1 cursor-pointer min-w-0">
+                <label class="flex items-center gap-2.5 flex-1 min-w-0">
                   <input type="checkbox" data-project-id="${pd.id}" ${isSelected ? 'checked' : ''} onchange="window.__toggleProject('${pd.id}')" class="w-4 h-4 rounded accent-brand" />
                   <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style="background: ${colorHex}20;">
                     <i data-lucide="briefcase" class="w-4 h-4" style="color: ${colorHex};"></i>
