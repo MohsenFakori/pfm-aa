@@ -1,0 +1,56 @@
+/* pwa.css: banners and install button */
+#pwa-banners {
+  position: fixed;
+  inset-inline: 12px;
+  bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  z-index: 2147483000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.pwa-banner {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 480px;
+  margin-inline: auto;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #0f1d32;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+  font-family: Vazirmatn, sans-serif;
+  line-height: 1.7;
+}
+.pwa-banner__text { flex: 1; font-size: 13px; }
+.pwa-banner__text ol { margin: 6px 0 0; padding-inline-start: 1.2em; }
+.pwa-banner__action {
+  flex: none;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #0080ff;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.pwa-banner__close {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+[data-pwa-install] { display: none; }
+.pwa-can-install [data-pwa-install],
+.pwa-ios-installable [data-pwa-install] { display: inline-flex; }
+@media (display-mode: standalone) {
+  [data-pwa-install] { display: none !important; }
+}

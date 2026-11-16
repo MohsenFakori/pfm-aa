@@ -1,0 +1,316 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors — مطابق UI Kit */
+  --color-brand: #0080ff;
+  --color-brand-dark: #0066cc;
+  --color-brand-soft: #1a8aff;
+  --color-cta: #ff7f00;
+  --color-cta-dark: #e56d00;
+  --color-ink: #0a1628;
+  --color-ink-soft: #0f1d32;
+  --color-ink-card: #142540;
+  --color-ink-elevated: #1a2d4d;
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-strong: rgba(255, 255, 255, 0.16);
+  --color-fg: #ffffff;
+  --color-fg-muted: #a3b3c9;
+  --color-fg-subtle: #6b7d96;
+  --color-success: #36b37e;
+  --color-success-soft: rgba(54, 179, 126, 0.15);
+  --color-warning: #ffab00;
+  --color-warning-soft: rgba(255, 171, 0, 0.15);
+  --color-danger: #ef4444;
+  --color-danger-soft: rgba(239, 68, 68, 0.15);
+  --color-info: #6554c0;
+  --color-info-soft: rgba(101, 84, 192, 0.15);
+  --color-purple: #8b5cf6;
+  --color-cyan: #22d3ee;
+  --color-pink: #ec4899;
+
+  /* Typography */
+  --font-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Global base */
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+body {
+  font-feature-settings: "ss01";
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(0, 128, 255, 0.12), transparent 60%),
+    radial-gradient(1000px 500px at 10% 10%, rgba(255, 127, 0, 0.08), transparent 60%),
+    #0a1628;
+  background-attachment: fixed;
+  font-family: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+}
+
+#app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  background: linear-gradient(180deg, #0a1628 0%, #0f1d32 100%);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.4);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Tabular nums for amounts */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Glass surfaces — مطابق UI Kit */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Animations — مطابق UI Kit */
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes drawerIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { transform: translate(-50%, -50%) scale(0.95); opacity: 0; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-slide-up { animation: slideUp 0.4s ease-out both; }
+.animate-sheet-up { animation: sheetUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) both; }
+.animate-drawer-in { animation: drawerIn 0.3s cubic-bezier(0.32, 0.72, 0, 1) both; }
+.animate-fade-in { animation: fadeIn 0.25s ease-out both; }
+.animate-scale-in { animation: scaleIn 0.25s ease-out both; }
+.animate-spin { animation: spin 0.8s linear infinite; }
+.animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.04) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #0080ff 0%, #ff7f00 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Tab active — مطابق UI Kit */
+.tab-active {
+  background: linear-gradient(135deg, #0080ff 0%, #0066cc 100%);
+  color: white;
+  box-shadow: 0 8px 20px -8px rgba(0, 128, 255, 0.6);
+}
+
+/* Hide number input arrows */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] { -moz-appearance: textfield; }
+
+/* Lucide icon defaults */
+[data-lucide] {
+  display: inline-block;
+  vertical-align: middle;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+/* Focus visible */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button {
+  font-family: inherit;
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+/* Modal/Sheet overlays */
+.overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.25s ease-out both;
+  z-index: 90;
+}
+
+.bottom-sheet {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 24px);
+  max-width: 480px;
+  max-height: 85vh;
+  background: #0f1d32;
+  border-radius: 24px;
+  overflow-y: auto;
+  animation: scaleIn 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+  box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.7);
+  z-index: 100;
+}
+
+.side-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 360px;
+  background: #0f1d32;
+  animation: drawerIn 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+  box-shadow: -10px 0 40px -10px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  overflow-y: auto;
+}
+
+/* Toast container */
+.toast-container {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+  width: 100%;
+  max-width: 480px;
+  padding: 0 16px;
+}
+
+.toast {
+  pointer-events: auto;
+  animation: slideUp 0.3s ease-out both;
+  max-width: 100%;
+}
+
+.toast.leaving {
+  animation: fadeIn 0.2s ease-out reverse both;
+}
+
+/* Tooltip */
+[data-tooltip] {
+  position: relative;
+}
+[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a2d4d;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* RTL-aware spacing utilities */
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* Drag handle cursor */
+.drag-handle {
+  cursor: grab;
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Smooth page transitions */
+.page-enter {
+  animation: fadeIn 0.25s ease-out both;
+}
+
+/* Active nav button */
+.nav-btn-active {
+  color: var(--color-brand);
+}
+.nav-btn-active svg {
+  stroke: var(--color-brand);
+}

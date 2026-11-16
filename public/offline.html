@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a1628">
+  <title>اتصال برقرار نیست | مدیریت مالی پروژه‌ها</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --accent: #0080ff; --bg: #0a1628; --text: #e2e8f0; --muted: #a3b3c9; }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: max(24px, env(safe-area-inset-top)) 24px 24px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Vazirmatn, Tahoma, system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.8;
+      text-align: center;
+    }
+    main { max-width: 420px; }
+    svg { width: 72px; height: 72px; margin-bottom: 16px; color: var(--accent); }
+    h1 { font-size: 1.4rem; margin-bottom: 8px; }
+    p { color: var(--muted); margin-bottom: 24px; }
+    button {
+      font: inherit;
+      padding: 12px 28px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+    }
+    button:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+    .status { margin: 16px 0 0; font-size: .875rem; }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; margin-inline-end: 6px; animation: pulse 1.6s infinite; }
+    @keyframes pulse { 50% { opacity: .3; } }
+    @media (prefers-reduced-motion: reduce) { .dot { animation: none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/>
+      <path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/>
+      <path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/>
+    </svg>
+    <h1>اتصال برقرار نیست</h1>
+    <p>
+      اینترنت قطع است یا اتصال به سرور برقرار نمی‌شود.
+      اگر از فیلترشکن یا پروکسی استفاده می‌کنید، یک بار آن را خاموش یا روشن کنید.
+    </p>
+    <button type="button" id="retry">تلاش دوباره</button>
+    <p class="status" role="status"><span class="dot"></span>به محض برقراری اتصال، صفحه خودکار باز می‌شود.</p>
+  </main>
+  <script>
+    var retry = function () { location.reload(); };
+    document.getElementById('retry').addEventListener('click', retry);
+    window.addEventListener('online', retry);
+    setInterval(function () {
+      fetch('/manifest.json?ping=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
+        .then(function (res) { if (res.ok) retry(); })
+        .catch(function () {});
+    }, 10000);
+  </script>
+</body>
+</html>
