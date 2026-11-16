@@ -383,7 +383,7 @@ function renderPartnerCard(partner) {
 
   return `
     <div onclick="window.__editPartner('${partner.id}')"
-      class="glass rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/8 transition active:scale-[0.98]">
+      class="glass rounded-2xl p-3.5 flex items-center gap-3 hover:bg-white/8 transition active:scale-[0.98]">
       <div class="shrink-0">
         ${Avatar({ text: firstLetter, color: partner.avatarColor || 'brand', size: 'md' })}
       </div>
