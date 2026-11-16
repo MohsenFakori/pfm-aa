@@ -525,10 +525,15 @@ function renderStep1() {
             class="w-full h-11 pr-4 pl-20 rounded-xl bg-ink-soft border border-line focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none text-sm transition tabular-nums ${projectFormState.amountUndetermined ? 'opacity-50 cursor-not-allowed' : ''}" />
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-fg-muted bg-white/5 px-2 py-1 rounded-md pointer-events-none">تومان</span>
         </div>
-        <label class="mt-2.5 flex items-center gap-2.5 cursor-pointer select-none">
-          <input type="checkbox" name="amountUndetermined" ${projectFormState.amountUndetermined ? 'checked' : ''} class="w-4 h-4 rounded accent-brand" />
+        <div class="mt-3 flex items-center justify-between gap-3">
           <span class="text-xs text-fg-muted">فعلاً مبلغ پروژه مشخص نیست</span>
-        </label>
+          <button type="button" data-toggle-amount-undetermined role="switch"
+            aria-checked="${projectFormState.amountUndetermined ? 'true' : 'false'}"
+            aria-label="تغییر وضعیت مشخص بودن مبلغ پروژه"
+            class="relative w-12 h-7 shrink-0 rounded-full transition ${projectFormState.amountUndetermined ? 'bg-success' : 'bg-white/15'}">
+            <span class="absolute top-0.5 ${projectFormState.amountUndetermined ? 'left-0.5' : 'right-0.5'} w-6 h-6 rounded-full bg-white shadow-md transition-all"></span>
+          </button>
+        </div>
         ${projectFormState.amountUndetermined ? '<p class="text-[10px] text-warning mt-1.5">مبلغ پروژه فعلاً ثبت نمی‌شود و بعداً می‌توانید آن را مشخص کنید.</p>' : ''}
       </div>
 
@@ -649,9 +654,9 @@ function attachProjectFormListeners() {
   const amountInput = formSheet.querySelector('[name="amount"]');
   if (amountInput) amountInput.addEventListener('input', (e) => { projectFormState.amount = e.target.value; });
 
-  const amountUndeterminedInput = formSheet.querySelector('[name="amountUndetermined"]');
-  if (amountUndeterminedInput) amountUndeterminedInput.addEventListener('change', (e) => {
-    projectFormState.amountUndetermined = e.target.checked;
+  const amountUndeterminedToggle = formSheet.querySelector('[data-toggle-amount-undetermined]');
+  if (amountUndeterminedToggle) amountUndeterminedToggle.addEventListener('click', () => {
+    projectFormState.amountUndetermined = !projectFormState.amountUndetermined;
     refreshProjectFormSheet();
   });
 
