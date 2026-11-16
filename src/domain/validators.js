@@ -38,7 +38,7 @@ export const validators = {
   project: {
     title: (v) => typeof v === 'string' && v.trim().length >= 2 && v.trim().length <= 200,
     employerId: (v) => !!v,
-    amount: (v) => Number.isInteger(v) && v > 0,
+    amount: (v, all) => all.amountUndetermined === true || (Number.isInteger(v) && v > 0),
     amountType: (v) => ['fixed_start', 'fixed_end'].includes(v),
     startDate: (v) => !!v,
     endDate: (v, all) => {
