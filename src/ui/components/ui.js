@@ -137,7 +137,7 @@ export function Select({ name, label, options = [], value = '', placeholder = 'Ø
       <div class="relative">
         ${iconName ? `<i data-lucide="${iconName}" class="w-4 h-4 text-fg-muted absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10"></i>` : ''}
         <select name="${name || ''}" ${requiredAttr}
-          class="w-full h-11 ${iconName ? 'pr-10' : 'pr-4'} pl-4 rounded-xl bg-ink-soft border border-line focus:border-brand outline-none text-sm transition appearance-none cursor-pointer">
+          class="w-full h-11 ${iconName ? 'pr-10' : 'pr-4'} pl-4 rounded-xl bg-ink-soft border border-line focus:border-brand outline-none text-sm transition appearance-none">
           <option value="" style="background: #0f1d32;" ${!value ? 'selected' : ''}>${placeholder}</option>
           ${optionsHtml}
         </select>
