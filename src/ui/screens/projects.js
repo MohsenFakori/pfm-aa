@@ -37,7 +37,7 @@ let projectFormState = null;
 function defaultProjectFormState() {
   return {
     step: 1, editId: null,
-    title: '', employerId: '', amount: '', amountType: 'fixed_start',
+    title: '', employerId: '', amount: '', amountUndetermined: false, amountType: 'fixed_start',
     startDate: '', endDate: '', status: 'active', color: 'brand', note: '', pinned: false,
     selectedPartners: [], partnerShares: {}
   };
@@ -167,7 +167,7 @@ function renderProjectCard(project) {
       <div class="grid grid-cols-3 gap-2 mb-3 text-center">
         <div class="rounded-lg bg-white/5 py-2">
           <p class="text-[9px] text-fg-muted">مبلغ</p>
-          <p class="text-xs font-bold tabular-nums">${formatTomanShort(project.amount)}</p>
+          <p class="text-xs font-bold tabular-nums">${project.amountUndetermined ? 'نامشخص' : formatTomanShort(project.amount)}</p>
         </div>
         <div class="rounded-lg bg-white/5 py-2">
           <p class="text-[9px] text-fg-muted">دریافتی</p>
@@ -255,7 +255,7 @@ function openTemplatePicker() {
                 <p class="text-xs font-bold truncate">${t.name}</p>
                 <p class="text-[10px] text-fg-muted">
                   ${employer ? employer.name : 'بدون کارفرما'}
-                  ${t.amount ? ' · ' + formatTomanShort(t.amount) : ''}
+                  ${t.amountUndetermined ? ' · مبلغ نامشخص' : (t.amount ? ' · ' + formatTomanShort(t.amount) : '')}
                   ${partnerCount > 0 ? ' · ' + toPersianDigits(partnerCount) + ' شریک' : ''}
                 </p>
               </div>
@@ -310,7 +310,13 @@ function applyTemplate(tpl) {
   if (!tpl) return;
   // Pre-fill form state from template (only fields that exist in template)
   if (tpl.employerId) projectFormState.employerId = tpl.employerId;
-  if (tpl.amount != null) projectFormState.amount = String(tpl.amount);
+  if (tpl.amountUndetermined === true) {
+    projectFormState.amountUndetermined = true;
+    projectFormState.amount = '';
+  } else if (tpl.amount != null) {
+    projectFormState.amount = String(tpl.amount);
+    projectFormState.amountUndetermined = false;
+  }
   if (tpl.color) projectFormState.color = tpl.color;
   if (tpl.partnerShares && typeof tpl.partnerShares === 'object') {
     // Validate that the partner IDs in the template still exist
@@ -338,7 +344,8 @@ function saveAsTemplate() {
   const template = {
     name: name.trim(),
     employerId: projectFormState.employerId || null,
-    amount: parseIntAmount(projectFormState.amount) || 0,
+    amount: projectFormState.amountUndetermined ? null : (parseIntAmount(projectFormState.amount) || 0),
+    amountUndetermined: projectFormState.amountUndetermined, 
     color: projectFormState.color || 'brand',
     partnerShares: { ...projectFormState.partnerShares }
   };
@@ -358,7 +365,8 @@ function openProjectForm(id = null) {
       projectFormState.editId = id;
       projectFormState.title = project.title || '';
       projectFormState.employerId = project.employerId || '';
-      projectFormState.amount = String(project.amount || '');
+      projectFormState.amount = String(project.amount ?? '');
+      projectFormState.amountUndetermined = project.amountUndetermined === true;
       projectFormState.amountType = project.amountType || 'fixed_start';
       projectFormState.startDate = project.startDate || '';
       projectFormState.endDate = project.endDate || '';
@@ -510,7 +518,19 @@ function renderStep1() {
           </div>`
       }
 
-      ${Input({ name: 'amount', type: 'text', label: 'مبلغ پروژه', placeholder: 'مبلغ به تومان', value: projectFormState.amount, required: true, suffix: 'تومان', inputmode: 'numeric' })}
+      <div>
+        <label class="text-xs text-fg-muted mb-1.5 block">مبلغ پروژه</label>
+        <div class="relative">
+          <input type="text" name="amount" placeholder="مبلغ به تومان" value="${projectFormState.amount}" inputmode="numeric" ${projectFormState.amountUndetermined ? 'disabled' : ''}
+            class="w-full h-11 pr-4 pl-20 rounded-xl bg-ink-soft border border-line focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none text-sm transition tabular-nums ${projectFormState.amountUndetermined ? 'opacity-50 cursor-not-allowed' : ''}" />
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-fg-muted bg-white/5 px-2 py-1 rounded-md pointer-events-none">تومان</span>
+        </div>
+        <label class="mt-2.5 flex items-center gap-2.5 cursor-pointer select-none">
+          <input type="checkbox" name="amountUndetermined" ${projectFormState.amountUndetermined ? 'checked' : ''} class="w-4 h-4 rounded accent-brand" />
+          <span class="text-xs text-fg-muted">فعلاً مبلغ پروژه مشخص نیست</span>
+        </label>
+        ${projectFormState.amountUndetermined ? '<p class="text-[10px] text-warning mt-1.5">مبلغ پروژه فعلاً ثبت نمی‌شود و بعداً می‌توانید آن را مشخص کنید.</p>' : ''}
+      </div>
 
       ${renderDateField('startDate', 'تاریخ شروع', projectFormState.startDate, true)}
       ${renderDateField('endDate', 'تاریخ پایان (اختیاری)', projectFormState.endDate, false)}
@@ -629,6 +649,12 @@ function attachProjectFormListeners() {
   const amountInput = formSheet.querySelector('[name="amount"]');
   if (amountInput) amountInput.addEventListener('input', (e) => { projectFormState.amount = e.target.value; });
 
+  const amountUndeterminedInput = formSheet.querySelector('[name="amountUndetermined"]');
+  if (amountUndeterminedInput) amountUndeterminedInput.addEventListener('change', (e) => {
+    projectFormState.amountUndetermined = e.target.checked;
+    refreshProjectFormSheet();
+  });
+
   const amountTypeRadios = formSheet.querySelectorAll('[name="amountType"]');
   amountTypeRadios.forEach(r => r.addEventListener('change', (e) => { projectFormState.amountType = e.target.value; }));
 
@@ -727,6 +753,9 @@ function syncProjectFormInputs() {
   const amountInput = formSheet.querySelector('[name="amount"]');
   if (amountInput) projectFormState.amount = amountInput.value;
 
+  const amountUndeterminedInput = formSheet.querySelector('[name="amountUndetermined"]');
+  if (amountUndeterminedInput) projectFormState.amountUndetermined = amountUndeterminedInput.checked;
+
   // Step 2 percent inputs — handle Persian digits
   const percentInputs = formSheet.querySelectorAll('[data-percent-partner]');
   percentInputs.forEach(input => {
@@ -753,10 +782,13 @@ function toLatinDigits(str) {
 function validateStep1() {
   if (!projectFormState.title || projectFormState.title.trim().length < 2) { showToast('عنوان پروژه حداقل ۲ کاراکتر باید باشد', 'error'); return false; }
   if (!projectFormState.employerId) { showToast('انتخاب کارفرما الزامی است', 'error'); return false; }
-  const amount = parseIntAmount(projectFormState.amount);
-  if (amount && amount < 0) {
-    showToast('مبلغ پروژه باید عدد صحیح مثبت باشد', 'error');
-    return false; }
+  if (!projectFormState.amountUndetermined) {
+    const amount = parseIntAmount(projectFormState.amount);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      showToast('مبلغ پروژه باید عدد صحیح مثبت باشد یا گزینه «مبلغ مشخص نیست» را فعال کنید', 'error');
+      return false;
+    }
+  }
   if (!projectFormState.startDate) { showToast('تاریخ شروع الزامی است', 'error'); return false; }
   if (projectFormState.endDate && new Date(projectFormState.endDate) < new Date(projectFormState.startDate)) { showToast('تاریخ پایان باید بعد از تاریخ شروع باشد', 'error'); return false; }
   return true;
@@ -772,12 +804,13 @@ function validateStep2() {
 
 async function saveProject() {
   try {
-    const amount = parseIntAmount(projectFormState.amount);
+    const amount = projectFormState.amountUndetermined ? null : parseIntAmount(projectFormState.amount);
 
     const projectData = {
       title: projectFormState.title.trim(),
       employerId: projectFormState.employerId,
       amount,
+      amountUndetermined: projectFormState.amountUndetermined,
       amountType: projectFormState.amountType,
       startDate: projectFormState.startDate,
       endDate: projectFormState.endDate || null,
