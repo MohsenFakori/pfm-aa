@@ -35,8 +35,8 @@ let currentDetailParams = null;
 let projectFormState = null;
 
 function formatAmountInput(value) {
-  const digits = toLatinDigits(String(value ?? '')).replace(/[^\\d]/g, '');
-  return digits.replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.');
+  const digits = toLatinDigits(String(value ?? '')).replace(/[^\d]/g, '');
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
 function amountToPersianWords(value) {
@@ -710,28 +710,28 @@ function attachProjectFormListeners() {
   };
 
   if (amountInput) {
-    projectFormState.amount = toLatinDigits(String(projectFormState.amount || '')).replace(/[^\\d]/g, '');
+    projectFormState.amount = toLatinDigits(String(projectFormState.amount || '')).replace(/[^\d]/g, '');
     amountInput.value = formatAmountInput(projectFormState.amount);
     updateAmountWords();
 
     amountInput.addEventListener('input', (e) => {
       const input = e.target;
       const cursor = input.selectionStart ?? input.value.length;
-      const digitsBeforeCursor = toLatinDigits(input.value.slice(0, cursor)).replace(/[^\\d]/g, '').length;
-      const rawValue = toLatinDigits(input.value).replace(/[^\\d]/g, '');
+      const digitsBeforeCursor = toLatinDigits(input.value.slice(0, cursor)).replace(/[^\d]/g, '').length;
+      const rawValue = toLatinDigits(input.value).replace(/[^\d]/g, '');
       projectFormState.amount = rawValue;
       input.value = formatAmountInput(rawValue);
 
       let nextCursor = 0;
       let seenDigits = 0;
       while (nextCursor < input.value.length && seenDigits < digitsBeforeCursor) {
-        if (/\\d/.test(input.value[nextCursor])) seenDigits++;
+        if (/\d/.test(input.value[nextCursor])) seenDigits++;
         nextCursor++;
       }
       input.setSelectionRange(nextCursor, nextCursor);
 
       clearTimeout(amountWordsTimer);
-      if (amountWords) amountWords.textContent = rawValue ? '...' : '';
+      if (amountWords) amountWords.textContent = rawValue ? 'در حال تبدیل مبلغ…' : '';
       amountWordsTimer = setTimeout(updateAmountWords, 650);
     });
   }
@@ -838,7 +838,7 @@ function syncProjectFormInputs() {
   if (employerSelect) projectFormState.employerId = employerSelect.value;
 
   const amountInput = formSheet.querySelector('[name="amount"]');
-  if (amountInput) projectFormState.amount = toLatinDigits(String(amountInput.value || '')).replace(/[^\\d]/g, '');
+  if (amountInput) projectFormState.amount = toLatinDigits(String(amountInput.value || '')).replace(/[^\d]/g, '');
 
   const amountUndeterminedInput = formSheet.querySelector('[name="amountUndetermined"]');
   if (amountUndeterminedInput) projectFormState.amountUndetermined = amountUndeterminedInput.checked;
