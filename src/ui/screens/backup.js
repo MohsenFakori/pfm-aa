@@ -411,7 +411,7 @@ function renderShortcutsSelector(selected) {
           return `
             <div>
               <label class="text-[10px] text-fg-muted block mb-1">جایگاه ${toPersianDigits(i + 1)}</label>
-              <select onchange="window.__setShortcut(${i}, this.value)" class="w-full h-10 px-3 rounded-xl bg-ink-soft border border-line focus:border-brand outline-none text-sm transition appearance-none cursor-pointer">
+              <select onchange="window.__setShortcut(${i}, this.value)" class="w-full h-10 px-3 rounded-xl bg-ink-soft border border-line focus:border-brand outline-none text-sm transition appearance-none">
                 <option value="" ${!currentValue ? 'selected' : ''} style="background: #0f1d32;">— انتخاب —</option>
                 ${SHORTCUT_OPTIONS.map(opt => `<option value="${opt.value}" ${currentValue === opt.value ? 'selected' : ''} style="background: #0f1d32;">${opt.label}</option>`).join('')}
               </select>
