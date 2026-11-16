@@ -175,15 +175,15 @@ function renderProjectCard(project) {
         </div>
         <div class="rounded-lg bg-white/5 py-2">
           <p class="text-[9px] text-fg-muted">باقیمانده</p>
-          <p class="text-xs font-bold tabular-nums text-cta">${formatTomanShort(remaining)}</p>
+          <p class="text-xs font-bold tabular-nums text-cta">${project.amountUndetermined ? '—' : formatTomanShort(remaining)}</p>
         </div>
       </div>
 
       <div class="flex items-center justify-between text-[10px] mb-1.5">
         <span class="text-fg-muted">پیشرفت تسویه</span>
-        <span class="font-medium">${toPersianDigits(percent)}٪</span>
+        <span class="font-medium">${project.amountUndetermined ? '—' : toPersianDigits(percent) + '٪'}</span>
       </div>
-      ${ProgressBar({ value: percent })}
+      ${project.amountUndetermined ? '' : ProgressBar({ value: percent })}
     </div>
   `;
 }
@@ -914,7 +914,7 @@ export function renderProjectDetailPage(params) {
         <div class="grid grid-cols-2 gap-2 mb-3">
           <div class="glass-strong rounded-xl p-2.5">
             <p class="text-[10px] text-fg-muted">مبلغ پروژه</p>
-            <p class="text-sm font-bold tabular-nums">${formatTomanShort(project.amount)}</p>
+            <p class="text-sm font-bold tabular-nums">${project.amountUndetermined ? 'نامشخص' : formatTomanShort(project.amount)}</p>
           </div>
           <div class="glass-strong rounded-xl p-2.5">
             <p class="text-[10px] text-fg-muted">دریافتی</p>
@@ -922,15 +922,15 @@ export function renderProjectDetailPage(params) {
           </div>
           <div class="glass-strong rounded-xl p-2.5">
             <p class="text-[10px] text-fg-muted">باقیمانده</p>
-            <p class="text-sm font-bold tabular-nums text-cta">${formatTomanShort(remaining)}</p>
+            <p class="text-sm font-bold tabular-nums text-cta">${project.amountUndetermined ? '—' : formatTomanShort(remaining)}</p>
           </div>
           <div class="glass-strong rounded-xl p-2.5">
             <p class="text-[10px] text-fg-muted">پیشرفت</p>
-            <p class="text-sm font-bold tabular-nums">${toPersianDigits(percent)}٪</p>
+            <p class="text-sm font-bold tabular-nums">${project.amountUndetermined ? '—' : toPersianDigits(percent) + '٪'}</p>
           </div>
         </div>
 
-        ${ProgressBar({ value: percent })}
+        ${project.amountUndetermined ? '' : ProgressBar({ value: percent })}
 
         <div class="flex items-center justify-between text-[10px] text-fg-muted mt-2">
           <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i>${formatJalali(project.startDate)}</span>
@@ -1166,7 +1166,7 @@ async function togglePin(id) {
 // === انتخابگر وضعیت پروژه ===
 // فقط در صورت تسویه کامل اجازه completed/archived می‌دهد
 function renderStatusSelector(project, remaining) {
-  const canChangeToCompleted = remaining === 0;
+  const canChangeToCompleted = !project.amountUndetermined && remaining === 0;
   const statusOptions = [
     { value: 'active', label: 'فعال', alwaysEnabled: true },
     { value: 'completed', label: 'تکمیل‌شده', alwaysEnabled: false },
@@ -1199,7 +1199,7 @@ function renderStatusSelector(project, remaining) {
       ${!canChangeToCompleted ? `
         <p class="text-[9px] text-warning mt-1.5 flex items-center gap-1">
           <i data-lucide="alert-triangle" class="w-3 h-3"></i>
-          برای تغییر به تکمیل/بایگانی، باید پروژه کاملاً تسویه شود (${formatTomanShort(remaining)} باقیمانده)
+          ${project.amountUndetermined ? 'برای تکمیل یا بایگانی، ابتدا مبلغ پروژه را مشخص کنید.' : `برای تغییر به تکمیل/بایگانی، باید پروژه کاملاً تسویه شود (${formatTomanShort(remaining)} باقیمانده)`}
         </p>
       ` : ''}
     </div>
