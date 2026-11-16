@@ -123,7 +123,7 @@ function renderEmployerCard(employer) {
 
   return `
     <div onclick="window.__editEmployer('${employer.id}')"
-      class="glass rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/8 transition active:scale-[0.98]">
+      class="glass rounded-2xl p-3.5 flex items-center gap-3 hover:bg-white/8 transition active:scale-[0.98]">
       <div class="shrink-0">
         ${Avatar({ text: firstLetter, color: employer.avatarColor || 'brand', size: 'md' })}
       </div>
@@ -160,7 +160,7 @@ function renderFab() {
     <div class="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-[480px] px-4 pointer-events-none z-30">
       <div class="flex justify-end">
         <button onclick="window.__openEmployerForm()"
-          class="cursor-pointer pointer-events-auto w-14 h-14 rounded-2xl bg-cta hover:bg-cta-dark text-white shadow-xl shadow-cta/40 flex items-center justify-center transition active:scale-95">
+          class="pointer-events-auto w-14 h-14 rounded-2xl bg-cta hover:bg-cta-dark text-white shadow-xl shadow-cta/40 flex items-center justify-center transition active:scale-95">
           <i data-lucide="plus" class="w-6 h-6"></i>
         </button>
       </div>
