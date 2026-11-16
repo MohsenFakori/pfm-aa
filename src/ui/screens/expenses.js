@@ -460,7 +460,8 @@ function renderTransferForm() {
       ${visualHtml}
       ${Select({ name: 'fromPartnerId', label: 'از شریک', options: partnerOptions, value: transferFormState.fromPartnerId, required: true, placeholder: 'انتخاب شریک مبدأ', icon: 'user' })}
       ${Select({ name: 'toPartnerId', label: 'به شریک', options: partnerOptions, value: transferFormState.toPartnerId, required: true, placeholder: 'انتخاب شریک مقصد', icon: 'user' })}
-      ${Input({ name: 'amount', type: 'text', label: 'مبلغ', placeholder: 'مبلغ به تومان', value: transferFormState.amount, required: true, suffix: 'تومان', inputmode: 'numeric' })}
+      ${Input({ name: 'amount', type: 'text', label: 'مبلغ', placeholder: 'مبلغ به تومان', value: formatAmountInput(transferFormState.amount), required: true, suffix: 'تومان', inputmode: 'numeric' })}
+      <p data-transfer-amount-words class="text-[11px] text-fg-muted -mt-1 min-h-4" aria-live="polite"></p>
       <div>
         <label class="text-xs text-fg-muted mb-1.5 block">تاریخ <span class="text-danger">*</span></label>
         <button onclick="window.__openTransferDate()" class="w-full h-11 px-4 rounded-xl bg-ink-soft border border-line focus:border-brand outline-none text-sm transition flex items-center justify-between">
@@ -481,7 +482,34 @@ function attachTransferFormListeners() {
   const toSelect = main.querySelector('[name="toPartnerId"]');
   if (toSelect) toSelect.addEventListener('change', (e) => { transferFormState.toPartnerId = e.target.value; refreshTransferForm(); });
   const amountInput = main.querySelector('[name="amount"]');
-  if (amountInput) amountInput.addEventListener('input', (e) => { transferFormState.amount = e.target.value; });
+  const amountWords = main.querySelector('[data-transfer-amount-words]');
+  const updateAmountWords = () => {
+    const amount = parseIntAmount(transferFormState.amount);
+    if (amountWords) amountWords.textContent = amount > 0 ? amountToPersianWords(amount) + ' تومان' : '';
+  };
+  if (amountInput) {
+    transferFormState.amount = toLatinDigits(transferFormState.amount).replace(/[^\d]/g, '');
+    amountInput.value = formatAmountInput(transferFormState.amount);
+    updateAmountWords();
+    amountInput.addEventListener('input', (e) => {
+      const input = e.target;
+      const cursor = input.selectionStart ?? input.value.length;
+      const digitsBeforeCursor = toLatinDigits(input.value.slice(0, cursor)).replace(/[^\d]/g, '').length;
+      const rawValue = toLatinDigits(input.value).replace(/[^\d]/g, '');
+      transferFormState.amount = rawValue;
+      input.value = formatAmountInput(rawValue);
+      let nextCursor = 0;
+      let seenDigits = 0;
+      while (nextCursor < input.value.length && seenDigits < digitsBeforeCursor) {
+        if (/\d/.test(input.value[nextCursor])) seenDigits++;
+        nextCursor++;
+      }
+      input.setSelectionRange(nextCursor, nextCursor);
+      clearTimeout(expenseAmountWordsTimer);
+      if (amountWords) amountWords.textContent = rawValue ? 'در حال تبدیل مبلغ…' : '';
+      expenseAmountWordsTimer = setTimeout(updateAmountWords, 650);
+    });
+  }
   const noteInput = main.querySelector('[name="note"]');
   if (noteInput) noteInput.addEventListener('input', (e) => { transferFormState.note = e.target.value; });
 }
