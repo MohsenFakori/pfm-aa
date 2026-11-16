@@ -234,7 +234,7 @@ function renderReminders() {
   };
 
   const listHtml = top.map(item => `
-    <div onclick="window.__navigate('${item.path}')" class="glass rounded-xl p-3 flex items-center gap-2.5 cursor-pointer hover:bg-white/8 transition active:scale-[0.98]">
+    <div onclick="window.__navigate('${item.path}')" class="glass rounded-xl p-3 flex items-center gap-2.5 hover:bg-white/8 transition active:scale-[0.98]">
       <div class="w-9 h-9 rounded-lg ${colorMap[item.color] || 'glass'} flex items-center justify-center shrink-0">
         <i data-lucide="${item.icon}" class="w-4 h-4"></i>
       </div>
@@ -303,7 +303,7 @@ function renderQuickActions() {
   return `
     <div class="grid grid-cols-5 gap-1.5">
       ${actions.map(a => `
-        <button onclick="window.__navigate('${a.path}')" class="flex flex-col items-center gap-1.5 py-2 rounded-xl transition active:scale-95 cursor-pointer hover:bg-white/5 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
+        <button onclick="window.__navigate('${a.path}')" class="flex flex-col items-center gap-1.5 py-2 rounded-xl transition active:scale-95 hover:bg-white/5 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
           <div class="w-11 h-11 rounded-xl ${colorMap[a.color]} flex items-center justify-center transition group-hover:scale-110"><i data-lucide="${a.icon}" class="w-5 h-5"></i></div>
           <span class="text-[10px] text-fg-muted font-medium">${a.label}</span>
         </button>
@@ -329,7 +329,7 @@ function renderProjectCard(project) {
   const deadline = project.endDate || project.startDate;
 
   return `
-    <div onclick="window.__navigate('/project/${project.id}')" class="glass rounded-2xl p-4 cursor-pointer hover:bg-white/10 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5 transition active:scale-[0.98]">
+    <div onclick="window.__navigate('/project/${project.id}')" class="glass rounded-2xl p-4 hover:bg-white/10 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5 transition active:scale-[0.98]">
       <div class="flex items-start gap-2.5 mb-3">
         <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background: ${colorHex}20;">
           <i data-lucide="briefcase" class="w-5 h-5" style="color: ${colorHex};"></i>
@@ -408,7 +408,7 @@ function renderTopDebtors(debtors) {
         ${debtors.map(d => {
           const employer = d.employer;
           return `
-            <div onclick="window.__navigate('/employers')" class="glass rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/8 transition active:scale-[0.98]">
+            <div onclick="window.__navigate('/employers')" class="glass rounded-2xl p-3.5 flex items-center gap-3 hover:bg-white/8 transition active:scale-[0.98]">
               ${Avatar({ text: (employer.name || '').charAt(0), color: employer.avatarColor || 'brand', size: 'md' })}
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-bold truncate">${employer.name}</p>
