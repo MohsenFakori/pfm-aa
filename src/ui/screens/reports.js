@@ -219,7 +219,7 @@ function renderEmployerBalanceRow(b) {
 
   return `
     <div class="glass rounded-2xl overflow-hidden">
-      <div onclick="window.__toggleEmployerDetails('${b.employer.id}')" class="p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/8 transition active:scale-[0.98]">
+      <div onclick="window.__toggleEmployerDetails('${b.employer.id}')" class="p-3.5 flex items-center gap-3 hover:bg-white/8 transition active:scale-[0.98]">
         <div class="shrink-0"><div class="w-10 h-10 rounded-full bg-gradient-to-br ${COLOR_GRADIENTS[color]} flex items-center justify-center text-white font-bold text-sm">${firstLetter}</div></div>
         <div class="flex-1 min-w-0">
           <div class="flex items-center justify-between gap-2 mb-1"><p class="text-sm font-bold truncate">${b.employer.name}</p>${statusBadge}</div>
