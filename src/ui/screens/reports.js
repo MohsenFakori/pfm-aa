@@ -304,7 +304,13 @@ function renderEmployerReceiptsList(receipts) {
 function renderPartnerBalances() {
   const balances = reports.partnerBalances();
   if (balances.length === 0) return EmptyState({ icon: 'users', title: 'هنوز شریکی ثبت نشده', description: 'برای مشاهده گزارش تراز شرکا، ابتدا شریک و پروژه ثبت کنید.' });
-  const totalNet = balances.reduce((s, b) => s + b.netPosition, 0);
+
+  const totalExpectedShare = balances.reduce((s, b) => s + b.expectedShare, 0);
+  const totalReceived = balances.reduce((s, b) => s + b.actualReceivedFromEmployers, 0);
+  const totalOverShare = balances.reduce((s, b) => s + b.overShare, 0);
+  const totalUnderShare = balances.reduce((s, b) => s + b.underShare, 0);
+  const totalCreditorClaims = balances.reduce((s, b) => s + Math.max(0, b.netPosition), 0);
+  const totalDebtorObligations = balances.reduce((s, b) => s + Math.max(0, -b.netPosition), 0);
   const sorted = [...balances].sort((a, b) => b.netPosition - a.netPosition);
   const unknownProjects = (state.data.projects || []).filter(p =>
     !p.deletedAt && p.status !== 'archived' && (p.amountUndetermined === true || p.amount == null)
@@ -313,21 +319,33 @@ function renderPartnerBalances() {
     <div class="rounded-xl border border-warning/30 bg-warning/10 p-3.5 flex items-start gap-2.5">
       <i data-lucide="alert-triangle" class="w-4 h-4 text-warning shrink-0 mt-0.5"></i>
       <div class="min-w-0">
-        <p class="text-xs font-bold text-warning">گزارش تسویه شرکا قطعی نیست</p>
-        <p class="text-[10px] text-fg-muted mt-1 leading-5">${toPersianDigits(unknownProjects.length)} پروژه فعال یا تکمیل‌شده مبلغ نامشخص دارد. سهم نهایی شرکا و وضعیت تسویه تا تعیین مبلغ این پروژه‌ها قابل محاسبه دقیق نیست.</p>
+        <p class="text-xs font-bold text-warning">محاسبه حق‌السهم هنوز کامل نیست</p>
+        <p class="text-[10px] text-fg-muted mt-1 leading-5">${toPersianDigits(unknownProjects.length)} پروژه مبلغ نامشخص دارد؛ مجموع حق‌السهم‌ها و مقایسه دریافتی با سهم نهایی ممکن است کمتر از مقدار واقعی باشد. تراز هزینه‌ها و انتقال‌های ثبت‌شده جداگانه محاسبه شده است.</p>
         <button onclick="window.__navigate('/projects')" class="text-[10px] text-warning font-bold mt-2">مشاهده پروژه‌ها</button>
       </div>
     </div>` : '';
-  return `<div class="space-y-4">${warning}${renderPartnerSummary(null, null, totalNet)}<div class="space-y-2.5">${sorted.map(renderPartnerBalanceRow).join('')}</div></div>`;
-}
 
-function renderPartnerSummary(_, __, totalNet) {
   return `
-    <div class="glass-strong rounded-2xl p-4">
-      <div class="flex items-center justify-between">
-        <span class="text-[11px] text-fg-muted">وضعیت خالص بین شرکا</span>
-        <span class="text-sm font-bold tabular-nums ${totalNet === 0 ? 'text-fg-muted' : 'text-fg-muted'}">${formatToman(totalNet)} (باید صفر باشد)</span>
+    <div class="space-y-4">
+      ${warning}
+      <div class="glass-strong rounded-2xl p-4">
+        <p class="text-xs font-bold mb-3">خلاصه حق‌السهم و دریافتی</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div><p class="text-[10px] text-fg-muted mb-1">مجموع حق‌السهم</p><p class="text-sm font-bold tabular-nums">${formatTomanShort(totalExpectedShare)}</p></div>
+          <div><p class="text-[10px] text-fg-muted mb-1">مجموع دریافتی ثبت‌شده</p><p class="text-sm font-bold text-success tabular-nums">${formatTomanShort(totalReceived)}</p></div>
+          <div><p class="text-[10px] text-fg-muted mb-1">بیشتر از سهم دریافت‌شده</p><p class="text-sm font-bold text-danger tabular-nums">${formatTomanShort(totalOverShare)}</p></div>
+          <div><p class="text-[10px] text-fg-muted mb-1">کمتر از سهم دریافت‌شده</p><p class="text-sm font-bold text-warning tabular-nums">${formatTomanShort(totalUnderShare)}</p></div>
+        </div>
       </div>
+      <div class="glass-strong rounded-2xl p-4">
+        <p class="text-xs font-bold mb-3">خلاصه بدهی بین شرکا</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div><p class="text-[10px] text-fg-muted mb-1">مجموع طلب شرکا</p><p class="text-sm font-bold text-success tabular-nums">${formatTomanShort(totalCreditorClaims)}</p></div>
+          <div><p class="text-[10px] text-fg-muted mb-1">مجموع بدهی شرکا</p><p class="text-sm font-bold text-danger tabular-nums">${formatTomanShort(totalDebtorObligations)}</p></div>
+        </div>
+        <p class="text-[9px] text-fg-muted mt-2">این تراز بر اساس هزینه‌های ثبت‌شده و انتقال‌های بین شرکا محاسبه می‌شود و از مقایسه حق‌السهم مستقل است.</p>
+      </div>
+      <div class="space-y-2.5">${sorted.map(renderPartnerBalanceRow).join('')}</div>
     </div>
   `;
 }
@@ -336,15 +354,15 @@ function renderPartnerBalanceRow(b) {
   const firstLetter = (b.partner.name || '').charAt(0);
   const color = b.partner.avatarColor || 'brand';
   let statusBadge;
-  if (b.hasUnknownProjectAmounts) statusBadge = Badge({ variant: 'warning', label: 'نیازمند بررسی' });
+  if (b.hasUnknownProjectAmounts) statusBadge = Badge({ variant: 'warning', label: 'سهم نامشخص' });
   else if (b.status === 'creditor') statusBadge = Badge({ variant: 'success', label: 'طلبکار' });
   else if (b.status === 'debtor') statusBadge = Badge({ variant: 'danger', label: 'بدهکار' });
   else statusBadge = Badge({ variant: 'default', label: 'تسویه' });
 
-  let posLabel = b.hasUnknownProjectAmounts ? 'وضعیت نهایی نامشخص' : 'تسویه';
-  let posColor = b.hasUnknownProjectAmounts ? 'text-warning' : 'text-fg-muted';
-  if (!b.hasUnknownProjectAmounts && b.netPosition > 0) { posLabel = 'طلب از شرکا'; posColor = 'text-success'; }
-  else if (!b.hasUnknownProjectAmounts && b.netPosition < 0) { posLabel = 'بدهی به شرکا'; posColor = 'text-danger'; }
+  const shareLabel = b.shareDifference > 0 ? 'بیشتر از سهم' : b.shareDifference < 0 ? 'کمتر از سهم' : 'مطابق سهم';
+  const shareColor = b.shareDifference > 0 ? 'text-danger' : b.shareDifference < 0 ? 'text-warning' : 'text-success';
+  const positionLabel = b.hasUnknownProjectAmounts ? 'تراز هزینه‌ها و انتقال‌ها' : b.netPosition > 0 ? 'طلب از شرکا' : b.netPosition < 0 ? 'بدهی به شرکا' : 'تسویه بین شرکا';
+  const positionColor = b.netPosition > 0 ? 'text-success' : b.netPosition < 0 ? 'text-danger' : 'text-fg-muted';
 
   return `
     <div class="glass rounded-2xl p-3.5">
@@ -353,25 +371,29 @@ function renderPartnerBalanceRow(b) {
         <div class="flex-1 min-w-0"><p class="text-sm font-bold truncate">${b.partner.name}</p></div>
         ${statusBadge}
       </div>
-
-      <div class="grid grid-cols-2 gap-2 text-center mb-2">
+      <div class="grid grid-cols-2 gap-2 text-center">
         <div class="rounded-lg bg-white/5 py-2">
-          <p class="text-[9px] text-fg-muted">طلب خالص از هزینه‌ها</p>
-          <p class="text-xs font-bold tabular-nums ${b.netClaimFromExpenses >= 0 ? 'text-success' : 'text-danger'}">${formatTomanShort(b.netClaimFromExpenses)}</p>
+          <p class="text-[9px] text-fg-muted">حق‌السهم پروژه‌ها</p>
+          <p class="text-xs font-bold tabular-nums">${formatTomanShort(b.expectedShare)}</p>
         </div>
         <div class="rounded-lg bg-white/5 py-2">
-          <p class="text-[9px] text-fg-muted">انتقال خالص دریافتی</p>
-          <p class="text-xs font-bold tabular-nums ${b.netTransfer >= 0 ? 'text-success' : 'text-danger'}">${formatTomanShort(b.netTransfer)}</p>
+          <p class="text-[9px] text-fg-muted">دریافتی از کارفرما</p>
+          <p class="text-xs font-bold text-success tabular-nums">${formatTomanShort(b.actualReceivedFromEmployers)}</p>
+        </div>
+        <div class="rounded-lg bg-white/5 py-2">
+          <p class="text-[9px] text-fg-muted">${shareLabel}</p>
+          <p class="text-xs font-bold ${shareColor} tabular-nums">${formatTomanShort(Math.abs(b.shareDifference))}</p>
+        </div>
+        <div class="rounded-lg bg-white/5 py-2">
+          <p class="text-[9px] text-fg-muted">خالص هزینه‌ها و انتقال‌ها</p>
+          <p class="text-xs font-bold tabular-nums ${positionColor}">${formatTomanShort(Math.abs(b.netPosition))}</p>
         </div>
       </div>
-
-      <div class="border-t border-white/5 pt-2 mt-2">
-        <div class="flex items-center justify-between">
-          <span class="text-[11px] ${posColor}">${posLabel}</span>
-          <span class="text-sm font-bold tabular-nums ${posColor}">${b.hasUnknownProjectAmounts ? '—' : formatToman(Math.abs(b.netPosition))}</span>
-        </div>
-        ${b.hasUnknownProjectAmounts ? `<p class="text-[10px] text-fg-muted mt-1">سهم این شریک در ${toPersianDigits(b.unknownProjectCount)} پروژه هنوز مشخص نیست.</p>` : ''}
+      <div class="border-t border-white/5 pt-2 mt-2 flex items-center justify-between">
+        <span class="text-[10px] ${positionColor}">${positionLabel}</span>
+        <span class="text-xs font-bold tabular-nums ${positionColor}">${formatToman(Math.abs(b.netPosition))}</span>
       </div>
+      ${b.hasUnknownProjectAmounts ? `<p class="text-[10px] text-warning mt-2">حق‌السهم این شریک به دلیل وجود پروژه با مبلغ نامشخص، قطعی نیست.</p>` : ''}
     </div>
   `;
 }
