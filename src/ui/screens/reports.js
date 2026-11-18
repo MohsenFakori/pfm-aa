@@ -183,8 +183,14 @@ function renderEmployerBalances() {
   const totalReceived = balances.reduce((s, b) => s + b.totalReceived, 0);
   const totalCredit = balances.reduce((s, b) => s + b.totalCredit, 0);
   const netBalance = totalDebt - totalReceived;
+  const unknownProjectCount = balances.reduce((s, b) => s + (b.unknownProjectCount || 0), 0);
+  const warning = unknownProjectCount > 0 ? `
+    <div class="rounded-xl border border-warning/30 bg-warning/10 p-3 flex items-start gap-2">
+      <i data-lucide="alert-triangle" class="w-4 h-4 text-warning shrink-0 mt-0.5"></i>
+      <p class="text-[10px] text-fg-muted leading-5">${toPersianDigits(unknownProjectCount)} پروژه مبلغ نامشخص دارد؛ ارقام بدهی و تراز زیر فقط بر اساس پروژه‌های دارای مبلغ مشخص محاسبه شده‌اند و وضعیت نهایی قطعی نیست.</p>
+    </div>` : '';
   const sorted = [...balances].sort((a, b) => b.balance - a.balance);
-  return `<div class="space-y-4">${renderEmployerSummary(totalDebt, totalReceived, totalCredit, netBalance)}<div class="space-y-2.5">${sorted.map(renderEmployerBalanceRow).join('')}</div></div>`;
+  return `<div class="space-y-4">${warning}${renderEmployerSummary(totalDebt, totalReceived, totalCredit, netBalance)}<div class="space-y-2.5">${sorted.map(renderEmployerBalanceRow).join('')}</div></div>`;
 }
 
 function renderEmployerSummary(totalDebt, totalReceived, totalCredit, netBalance) {
@@ -204,7 +210,8 @@ function renderEmployerBalanceRow(b) {
   const firstLetter = (b.employer.name || '').charAt(0);
   const color = b.employer.avatarColor || 'brand';
   let statusBadge;
-  if (b.status === 'debtor') statusBadge = Badge({ variant: 'danger', label: 'بدهکار' });
+  if (b.hasUnknownProjectAmounts) statusBadge = Badge({ variant: 'warning', label: 'نیازمند بررسی' });
+  else if (b.status === 'debtor') statusBadge = Badge({ variant: 'danger', label: 'بدهکار' });
   else if (b.status === 'creditor') statusBadge = Badge({ variant: 'success', label: 'بستانکار' });
   else statusBadge = Badge({ variant: 'default', label: 'تسویه' });
 
@@ -238,7 +245,7 @@ function renderEmployerBalanceRow(b) {
                 <i data-lucide="download" class="w-3 h-3"></i> PDF
               </button>
             </div>
-            <span class="text-xs font-bold tabular-nums ${b.balance > 0 ? 'text-danger' : b.balance < 0 ? 'text-success' : 'text-fg-muted'}">${formatToman(b.balance)}</span>
+            <span class="text-xs font-bold tabular-nums ${b.hasUnknownProjectAmounts ? 'text-warning' : b.balance > 0 ? 'text-danger' : b.balance < 0 ? 'text-success' : 'text-fg-muted'}">${b.hasUnknownProjectAmounts ? 'تراز موقت: ' : ''}${formatToman(b.balance)}</span>
           </div>
         </div>
       </div>
