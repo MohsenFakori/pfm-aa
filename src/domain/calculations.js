@@ -35,11 +35,16 @@ export function getEmployerBalance(employerId, data = null) {
   return cached(`employer:${employerId}`, useCache, () => {
   const state = data || (window.__state && window.__state.data) || { projects: [], receipts: [], receiptAllocations: [], employerCredits: [] };
 
-  // مجموع بدهی = مبلغ همه پروژه‌های فعال و تکمیل‌شده (نه بایگانی‌شده)
+  // بایگانی صرفاً وضعیت مدیریتی است؛ تا وقتی پروژه حذف نشده، بدهی آن در تراز باقی می‌ماند.
+  // مبلغ پروژه‌های نامشخص وارد جمع عددی نمی‌شود و وضعیت تراز را نامطمئن می‌کند.
   const projects = (state.projects || []).filter(p =>
-    p.employerId === employerId && !p.deletedAt && p.status !== 'archived'
+    p.employerId === employerId && !p.deletedAt
   );
-  const totalDebt = projects.reduce((s, p) => s + (p.amount || 0), 0);
+  const unknownProjects = projects.filter(p => p.amountUndetermined === true || p.amount == null);
+  const totalDebt = projects.reduce((sum, p) => {
+    if (p.amountUndetermined === true || p.amount == null) return sum;
+    return sum + Number(p.amount || 0);
+  }, 0);
 
   // مجموع دریافتی = مبلغ همه receiptهای این کارفرما
   const receipts = (state.receipts || []).filter(r =>
@@ -66,13 +71,16 @@ export function getEmployerBalance(employerId, data = null) {
   let status = 'settled';
   if (balance > 0) status = 'debtor';
   else if (balance < 0) status = 'creditor';
+  if (unknownProjects.length > 0) status = 'uncertain';
 
   return {
     totalDebt,
     totalReceived,
     totalCredit,
     balance,
-    status
+    status,
+    unknownProjectCount: unknownProjects.length,
+    hasUnknownProjectAmounts: unknownProjects.length > 0
   };
   });
 }
@@ -347,11 +355,14 @@ export function getDashboardSummary(data = null) {
   };
 
   const allProjects = (state.projects || []).filter(p => !p.deletedAt);
+  const knownAmountProjects = allProjects.filter(p => p.amountUndetermined !== true && p.amount != null);
   const activeProjects = allProjects.filter(p => p.status === 'active');
 
-  const totalExpected = activeProjects.reduce((s, p) => s + (p.amount || 0), 0);
-  const totalReceived = activeProjects.reduce((s, p) => s + getProjectReceived(p.id, state), 0);
+  // جمع مالی همه پروژه‌های حذف‌نشده، مستقل از وضعیت فعال/تکمیل/بایگانی
+  const totalExpected = knownAmountProjects.reduce((s, p) => s + Number(p.amount || 0), 0);
+  const totalReceived = knownAmountProjects.reduce((s, p) => s + getProjectReceived(p.id, state), 0);
   const totalRemaining = totalExpected - totalReceived;
+  const unknownProjectCount = allProjects.filter(p => p.amountUndetermined === true || p.amount == null).length;
 
   // ماه جاری شمسی — برای سادگی از ماه میلادی استفاده می‌کنیم
   const now = new Date();
@@ -378,6 +389,7 @@ export function getDashboardSummary(data = null) {
     totalExpected,
     totalReceived,
     totalRemaining,
+    unknownProjectCount,
     activeProjectsCount: activeProjects.length,
     monthInflow,
     monthOutflow,
