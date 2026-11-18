@@ -109,6 +109,7 @@ export function renderPartnersPage() {
   window.__editPartnerTransfer = (id) => openTransferEditor(id, renderPartnersPage);
   window.__deletePartnerTransfer = (id) => removeTransferRecord(id, renderPartnersPage);
   window.__showPartnerTransactions = (id) => { txFilterPartner = id; txFilterType = 'all'; partnerTab = 'transactions'; renderPartnersPage(); };
+  window.__openPartnerDetails = (id) => openPartnerDetails(id);
 }
 
 function getFilteredPartners(allPartners) {
@@ -129,10 +130,37 @@ function getFilteredPartners(allPartners) {
 function renderSummaryTab(allPartners) {
   const filtered = getFilteredPartners(allPartners);
   return `
+    ${renderPartnerOverview(allPartners)}
     ${renderSearch('partner-search', 'جستجوی شریک...')}
     ${renderAutoSettleButton(allPartners)}
     <div id="partner-list" class="space-y-2.5 mt-4">
       ${filtered.length === 0 ? `<div class="glass rounded-2xl p-6 text-center text-fg-muted text-sm">نتیجه‌ای یافت نشد</div>` : filtered.map(renderPartnerCard).join('')}
+    </div>
+  `;
+}
+
+function renderPartnerOverview(partners) {
+  const balances = partners.map(p => getPartnerBalance(p.id, state.data));
+  const expected = balances.reduce((s, b) => s + b.expectedShare, 0);
+  const received = balances.reduce((s, b) => s + b.actualReceivedFromEmployers, 0);
+  const over = balances.reduce((s, b) => s + b.overShare, 0);
+  const under = balances.reduce((s, b) => s + b.underShare, 0);
+  const debt = balances.reduce((s, b) => s + Math.max(0, b.netPosition), 0);
+  const unknown = balances.some(b => b.hasUnknownProjectAmounts);
+  return `
+    <div class="glass-strong rounded-2xl p-3.5 mb-3">
+      <p class="text-xs font-bold mb-3">نمای کلی شرکا</p>
+      <div class="grid grid-cols-2 gap-3">
+        <div><p class="text-[10px] text-fg-muted">حق‌السهم کل</p><p class="text-sm font-bold tabular-nums">${formatTomanShort(expected)}${unknown ? ' · تقریبی' : ''}</p></div>
+        <div><p class="text-[10px] text-fg-muted">دریافتی کل</p><p class="text-sm font-bold text-success tabular-nums">${formatTomanShort(received)}</p></div>
+        <div><p class="text-[10px] text-fg-muted">بیشتر از سهم</p><p class="text-sm font-bold text-danger tabular-nums">${formatTomanShort(over)}</p></div>
+        <div><p class="text-[10px] text-fg-muted">کمتر از سهم</p><p class="text-sm font-bold text-warning tabular-nums">${formatTomanShort(under)}</p></div>
+      </div>
+      <div class="mt-3 pt-2 border-t border-white/5 flex items-center justify-between">
+        <span class="text-[10px] text-fg-muted">مطالبات باز بین شرکا</span>
+        <span class="text-sm font-bold text-danger tabular-nums">${formatTomanShort(debt)}</span>
+      </div>
+      ${unknown ? '<p class="text-[9px] text-warning mt-2">به دلیل وجود پروژه با مبلغ نامشخص، حق‌السهم کل قطعی نیست.</p>' : ''}
     </div>
   `;
 }
@@ -393,7 +421,7 @@ function renderPartnerCard(partner) {
   else if (balance.netPosition < 0) { posColor = 'text-danger'; posLabel = 'بدهکار'; }
 
   return `
-    <div onclick="window.__editPartner('${partner.id}')"
+    <div onclick="window.__openPartnerDetails('${partner.id}')"
       class="glass rounded-2xl p-3.5 flex items-center gap-3 hover:bg-white/8 transition active:scale-[0.98]">
       <div class="shrink-0">
         ${Avatar({ text: firstLetter, color: partner.avatarColor || 'brand', size: 'md' })}
@@ -412,11 +440,54 @@ function renderPartnerCard(partner) {
         </div>
       </div>
       <div class="flex flex-col items-center gap-1 shrink-0">
+        <button onclick="event.stopPropagation(); window.__editPartner('${partner.id}')" class="w-8 h-8 rounded-lg glass text-brand flex items-center justify-center" aria-label="ویرایش شریک"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
         <button onclick="event.stopPropagation(); window.__showPartnerTransactions('${partner.id}')" class="px-2 py-1.5 rounded-lg bg-info-soft text-purple-300 text-[9px] font-medium whitespace-nowrap">سوابق مالی</button>
-        <i data-lucide="chevron-left" class="w-4 h-4 text-fg-muted"></i>
       </div>
     </div>
   `;
+}
+
+function openPartnerDetails(partnerId) {
+  const partner = (state.data.partners || []).find(p => p.id === partnerId && !p.deletedAt);
+  if (!partner) return;
+  const b = getPartnerBalance(partnerId, state.data);
+  const shareColor = b.shareDifference > 0 ? 'text-danger' : b.shareDifference < 0 ? 'text-warning' : 'text-success';
+  const shareLabel = b.shareDifference > 0 ? 'بیشتر از حق‌السهم دریافت کرده' : b.shareDifference < 0 ? 'کمتر از حق‌السهم دریافت کرده' : 'دریافتی مطابق حق‌السهم';
+  const positionColor = b.netPosition > 0 ? 'text-success' : b.netPosition < 0 ? 'text-danger' : 'text-fg-muted';
+  const positionLabel = b.netPosition > 0 ? 'طلبکار از سایر شرکا' : b.netPosition < 0 ? 'بدهکار به سایر شرکا' : 'تسویه';
+  openSheet(`
+    <div class="pb-2">
+      <div class="flex items-center justify-between mb-4">
+        <div><h3 class="text-base font-bold">${partner.name}</h3><p class="text-[10px] text-fg-muted mt-1">خلاصه وضعیت مالی شریک</p></div>
+        <button onclick="window.__closePartnerDetails()" class="w-8 h-8 rounded-lg glass flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="glass rounded-xl p-3 mb-3">
+        <p class="text-xs font-bold mb-2">حق‌السهم و دریافتی</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div><p class="text-[10px] text-fg-muted">حق‌السهم پروژه‌ها</p><p class="text-sm font-bold">${formatTomanShort(b.expectedShare)}</p></div>
+          <div><p class="text-[10px] text-fg-muted">دریافتی از کارفرما</p><p class="text-sm font-bold text-success">${formatTomanShort(b.actualReceivedFromEmployers)}</p></div>
+          <div class="col-span-2"><p class="text-[10px] ${shareColor}">${shareLabel}</p><p class="text-base font-bold ${shareColor}">${formatToman(Math.abs(b.shareDifference))}</p></div>
+        </div>
+        ${b.hasUnknownProjectAmounts ? `<p class="text-[10px] text-warning mt-2">سهم نهایی به دلیل ${toPersianDigits(b.unknownProjectCount)} پروژه با مبلغ نامشخص، قطعی نیست.</p>` : ''}
+      </div>
+      <div class="glass rounded-xl p-3 mb-3">
+        <p class="text-xs font-bold mb-2">تسویه بین شرکا</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div><p class="text-[10px] text-fg-muted">پرداخت برای دیگران</p><p class="text-xs font-bold">${formatTomanShort(b.paidForOthers)}</p></div>
+          <div><p class="text-[10px] text-fg-muted">سهم از هزینه دیگران</p><p class="text-xs font-bold">${formatTomanShort(b.owedToOthers)}</p></div>
+          <div><p class="text-[10px] text-fg-muted">انتقال دریافتی</p><p class="text-xs font-bold">${formatTomanShort(b.transferredIn)}</p></div>
+          <div><p class="text-[10px] text-fg-muted">انتقال پرداختی</p><p class="text-xs font-bold">${formatTomanShort(b.transferredOut)}</p></div>
+        </div>
+        <div class="mt-3 pt-2 border-t border-white/5 flex items-center justify-between"><span class="text-[10px] ${positionColor}">${positionLabel}</span><span class="text-sm font-bold ${positionColor}">${formatToman(Math.abs(b.netPosition))}</span></div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="window.__closePartnerDetails(); window.__showPartnerTransactions('${partner.id}')" class="flex-1 h-10 rounded-xl glass text-xs font-medium">سوابق مالی</button>
+        <button onclick="window.__closePartnerDetails(); window.__editPartner('${partner.id}')" class="flex-1 h-10 rounded-xl bg-brand text-white text-xs font-medium">ویرایش اطلاعات</button>
+      </div>
+    </div>
+  `);
+  window.__closePartnerDetails = closeSheet;
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderSearch(inputId, placeholder) {
