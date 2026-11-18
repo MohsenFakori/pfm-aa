@@ -213,7 +213,7 @@ function renderReminders() {
     !p.deletedAt && p.status !== 'archived' && (p.amountUndetermined === true || p.amount == null)
   );
   for (const p of unknownProjects) {
-    items.push({
+    items.unshift({
       type: 'unknown-project',
       icon: 'circle-help',
       color: 'warning',
