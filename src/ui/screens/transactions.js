@@ -27,6 +27,7 @@ let transactionFormState = null;
 let editReceiptState = null;
 let editExpenseState = null;
 let editTransferState = null;
+let transferAfterSave = null;
 let transactionAmountWordsTimer = null;
 
 function formatTransactionAmount(value) {
@@ -922,7 +923,7 @@ function deleteReceipt(id) {
       // Soft-delete: فقط receipt را soft-delete می‌کنیم (allocations حفظ می‌شوند تا در صورت undo قابل بازیابی باشند)
       const updated = await repo.receipts.update(id, { deletedAt: new Date().toISOString() });
       state.updateEntity('receipts', updated);
-      renderTransactionsPage();
+      afterChange();
 
       showToast('حذف شد', 'success', {
         duration: 5000,
@@ -978,7 +979,7 @@ function deleteExpense(id) {
   })();
 }
 
-function deleteTransfer(id) {
+function deleteTransfer(id, afterChange = renderTransactionsPage) {
   const transfer = (state.data.partnerTransfers || []).find(t => t.id === id);
   if (!transfer) return;
 
@@ -996,7 +997,7 @@ function deleteTransfer(id) {
             const restored = await repo.partnerTransfers.update(id, { deletedAt: null });
             state.updateEntity('partnerTransfers', restored);
             showToast('انتقال بازگردانده شد', 'success');
-            renderTransactionsPage();
+            afterChange();
           } catch (e) {
             console.error('Restore transfer failed:', e);
             showToast('خطا در بازگردانی', 'error');
@@ -1305,7 +1306,8 @@ async function saveExpenseEdit() {
 }
 
 // =========== EDIT TRANSFER (bottom sheet) ===========
-function editTransfer(id) {
+function editTransfer(id, afterSave = renderTransactionsPage) {
+  transferAfterSave = afterSave;
   const transfer = (state.data.partnerTransfers || []).find(t => t.id === id);
   if (!transfer) return;
   editTransferState = {
@@ -1428,9 +1430,14 @@ async function saveTransferEdit() {
     showToast('انتقال به‌روزرسانی شد', 'success');
     editTransferState = null;
     closeSheet();
-    renderTransactionsPage();
+    (transferAfterSave || renderTransactionsPage)();
+    transferAfterSave = null;
   } catch (e) {
     console.error('Save transfer edit failed:', e);
     showToast('خطا در به‌روزرسانی انتقال', 'error');
   }
 }
+
+// API مشترک برای مدیریت انتقال‌ها از صفحه شرکا
+export function openTransferEditor(id, afterSave = renderTransactionsPage) { editTransfer(id, afterSave); }
+export function removeTransferRecord(id, afterChange = renderTransactionsPage) { deleteTransfer(id, afterChange); }
