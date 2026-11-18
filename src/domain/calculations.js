@@ -213,8 +213,13 @@ export function getPartnerBalance(partnerId, data = null) {
   // صفر = تسویه
   const netPosition = netClaimFromExpenses - netTransfer;
 
-  // تراز در برابر سهم انتظاری
-  const difference = actualReceivedFromEmployers + netPosition - expectedShare;
+  // اختلاف دریافتی واقعی با حق‌السهم پروژه‌ها؛ مستقل از بدهی/طلب هزینه‌ها
+  const shareDifference = actualReceivedFromEmployers - expectedShare;
+  const overShare = Math.max(0, shareDifference);
+  const underShare = Math.max(0, -shareDifference);
+
+  // تراز کلی شریک پس از احتساب هزینه‌ها و انتقال‌ها
+  const difference = shareDifference + netPosition;
 
   let status = 'even';
   if (netPosition > 0) status = 'creditor';
@@ -225,6 +230,9 @@ export function getPartnerBalance(partnerId, data = null) {
     unknownProjectCount: unknownProjectIds.length,
     hasUnknownProjectAmounts: unknownProjectIds.length > 0,
     actualReceivedFromEmployers,
+    shareDifference,
+    overShare,
+    underShare,
     paidForOthers,
     owedToOthers,
     netClaimFromExpenses,
@@ -385,6 +393,13 @@ export function getDashboardSummary(data = null) {
     .filter(b => b.status === 'debtor')
     .sort((a, b) => b.balance - a.balance);
 
+  const partnerBalances = (state.partners || [])
+    .filter(p => !p.deletedAt)
+    .map(partner => ({ partner, ...getPartnerBalance(partner.id, state) }));
+  const partnerCreditors = partnerBalances.filter(b => b.netPosition > 0);
+  const partnerDebtors = partnerBalances.filter(b => b.netPosition < 0);
+  const partnerDebtTotal = partnerCreditors.reduce((sum, b) => sum + b.netPosition, 0);
+
   return {
     totalExpected,
     totalReceived,
@@ -395,7 +410,12 @@ export function getDashboardSummary(data = null) {
     monthOutflow,
     monthNet: monthInflow - monthOutflow,
     debtors: debtors.slice(0, 3),
-    allDebtorsCount: debtors.length
+    allDebtorsCount: debtors.length,
+    partnerDebtTotal,
+    partnerDebtorsCount: partnerDebtors.length,
+    partnerCreditorsCount: partnerCreditors.length,
+    topPartnerDebtors: partnerDebtors.sort((a, b) => a.netPosition - b.netPosition).slice(0, 3),
+    topPartnerCreditors: partnerCreditors.sort((a, b) => b.netPosition - a.netPosition).slice(0, 3)
   };
 }
 
