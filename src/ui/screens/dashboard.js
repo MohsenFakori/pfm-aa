@@ -4,6 +4,7 @@
 import { state } from '../../core/state.js';
 import { navigate } from '../../core/router.js';
 import { Avatar, EmptyState, ProgressBar, SectionHeader, StatCard } from '../components/ui.js';
+import { openSheet, closeSheet } from '../components/sheet.js';
 import { formatToman, formatTomanShort } from '../../utils/number.js';
 import { formatJalali, toPersianDigits, getWeekday, today, isSameDay } from '../../utils/date.js';
 import { getDashboardSummary, getProjectProgressPercent, getProjectReceived, getProjectRemaining, getEmployerBalance } from '../../domain/calculations.js';
@@ -50,7 +51,6 @@ export function renderDashboardPage() {
       ${renderBalanceCard(summary, progressPercent)}
       ${renderQuickStats(summary)}
       ${renderQuickActions()}
-      ${renderReminders()}
       ${activeProjects.length > 0 ? renderActiveProjects(activeProjects) : ''}
       ${recentItems.length > 0 ? renderRecentTransactions(recentItems) : ''}
       ${topDebtors.length > 0 ? renderTopDebtors(topDebtors) : ''}
@@ -58,6 +58,7 @@ export function renderDashboardPage() {
   `;
   if (window.lucide) window.lucide.createIcons();
   window.__navigate = (path) => navigate(path);
+  window.__openDashboardReminders = openDashboardReminders;
 }
 
 function renderWelcomeState() {
@@ -79,6 +80,7 @@ function renderGreetingHeader(firstLetter, greeting, userName, avatarColor) {
   const todayIso = today();
   const weekday = getWeekday(todayIso);
   const dateStr = formatJalali(todayIso);
+  const reminderCount = getReminderItems().length;
   return `
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2.5">
@@ -92,9 +94,9 @@ function renderGreetingHeader(firstLetter, greeting, userName, avatarColor) {
           </p>
         </div>
       </div>
-      <button class="w-10 h-10 rounded-xl glass flex items-center justify-center relative" aria-label="اعلان‌ها">
+      <button onclick="window.__openDashboardReminders()" ${reminderCount === 0 ? 'disabled' : ''} class="w-10 h-10 rounded-xl glass flex items-center justify-center relative ${reminderCount > 0 ? 'text-cta hover:bg-white/10' : 'text-fg-muted opacity-50 cursor-not-allowed'}" aria-label="یادآوری‌ها" aria-haspopup="dialog" aria-disabled="${reminderCount === 0}">
         <i data-lucide="bell" class="w-5 h-5"></i>
-        <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-cta"></span>
+        ${reminderCount > 0 ? `<span class="absolute -top-1 -left-1 min-w-[18px] h-[18px] px-1 rounded-full bg-danger text-white text-[9px] font-bold flex items-center justify-center leading-none">${toPersianDigits(reminderCount)}</span>` : ''}
       </button>
     </div>
   `;
@@ -186,88 +188,45 @@ function renderTodaySummary() {
 }
 
 // === یادآوری‌ها ===
-// پروژه‌های تکمیل‌شده‌ای که هنوز تسویه نشده‌اند + کارفرماهای بدهکار (حداکثر ۳ مورد)
-function renderReminders() {
+function getReminderItems() {
   const items = [];
-
-  // پروژه‌های تکمیل‌شده ولی تسویه‌نشده
-  const completedProjects = (state.data.projects || []).filter(p =>
-    !p.deletedAt && p.status === 'completed'
-  );
+  const completedProjects = (state.data.projects || []).filter(p => !p.deletedAt && p.status === 'completed');
   for (const p of completedProjects) {
     const remaining = getProjectRemaining(p.id, state.data);
-    if (remaining > 0) {
-      items.push({
-        type: 'project',
-        icon: 'briefcase',
-        color: 'cta',
-        title: p.title,
-        amount: remaining,
-        path: `/project/${p.id}`
-      });
-    }
+    if (remaining > 0) items.push({ type: 'project', icon: 'briefcase', color: 'cta', title: p.title, amount: remaining, description: 'تسویه نشده', path: `/project/${p.id}` });
   }
-
-  // پروژه‌های فعال/تکمیل‌شده با مبلغ نامشخص؛ یادآوری برای تکمیل اطلاعات مالی
-  const unknownProjects = (state.data.projects || []).filter(p =>
-    !p.deletedAt && p.status !== 'archived' && (p.amountUndetermined === true || p.amount == null)
-  );
-  for (const p of unknownProjects) {
-    items.unshift({
-      type: 'unknown-project',
-      icon: 'circle-help',
-      color: 'warning',
-      title: p.title,
-      description: 'مبلغ پروژه مشخص نشده',
-      path: `/project/${p.id}`
-    });
-  }
-
-  // کارفرماهای بدهکار
+  const unknownProjects = (state.data.projects || []).filter(p => !p.deletedAt && p.status !== 'archived' && (p.amountUndetermined === true || p.amount == null));
+  for (const p of unknownProjects) items.push({ type: 'unknown-project', icon: 'circle-help', color: 'warning', title: p.title, description: 'مبلغ پروژه مشخص نشده', path: `/project/${p.id}` });
   const employers = (state.data.employers || []).filter(e => !e.deletedAt);
   for (const e of employers) {
-    const b = getEmployerBalance(e.id, state.data);
-    if (b.balance > 0) {
-      items.push({
-        type: 'employer',
-        icon: 'user',
-        color: 'danger',
-        title: e.name,
-        amount: b.balance,
-        path: '/employers'
-      });
-    }
+    const balance = getEmployerBalance(e.id, state.data);
+    if (balance.balance > 0) items.push({ type: 'employer', icon: 'user', color: 'danger', title: e.name, amount: balance.balance, description: 'مطالبات دریافت‌نشده', path: '/employers' });
   }
+  return items;
+}
 
-  if (items.length === 0) return '';
-
-  // محدود به ۳ مورد
-  const top = items.slice(0, 3);
-  const colorMap = {
-    cta: 'bg-cta/15 text-cta',
-    danger: 'bg-danger-soft text-danger',
-    warning: 'bg-warning-soft text-warning'
-  };
-
-  const listHtml = top.map(item => `
-    <div onclick="window.__navigate('${item.path}')" class="glass rounded-xl p-3 flex items-center gap-2.5 hover:bg-white/8 transition active:scale-[0.98]">
-      <div class="w-9 h-9 rounded-lg ${colorMap[item.color] || 'glass'} flex items-center justify-center shrink-0">
-        <i data-lucide="${item.icon}" class="w-4 h-4"></i>
-      </div>
-      <div class="flex-1 min-w-0">
-        <p class="text-xs font-bold truncate">${item.title}</p>
-        <span class="inline-block mt-1 px-1.5 py-0.5 rounded-md ${item.type === 'unknown-project' ? 'bg-warning-soft text-warning' : 'bg-warning-soft text-warning'} text-[9px] font-medium">${item.description || 'تسویه نشده'}</span>
-      </div>
-      ${item.type === 'unknown-project' ? '<i data-lucide="chevron-left" class="w-4 h-4 text-fg-muted shrink-0"></i>' : `<p class="text-xs font-bold tabular-nums text-warning shrink-0">${formatTomanShort(item.amount)}</p>`}
-    </div>
+function openDashboardReminders() {
+  const items = getReminderItems();
+  if (!items.length) return;
+  const colorMap = { cta: 'bg-cta/15 text-cta', danger: 'bg-danger-soft text-danger', warning: 'bg-warning-soft text-warning' };
+  const listHtml = items.map(item => `
+    <button type="button" onclick="window.__closeDashboardReminders(); window.__navigate('${item.path}')" class="w-full text-right glass rounded-xl p-3 flex items-center gap-2.5 hover:bg-white/8 transition">
+      <div class="w-9 h-9 rounded-lg ${colorMap[item.color] || 'glass'} flex items-center justify-center shrink-0"><i data-lucide="${item.icon}" class="w-4 h-4"></i></div>
+      <div class="flex-1 min-w-0"><p class="text-xs font-bold truncate">${item.title}</p><span class="inline-block mt-1 text-[10px] text-fg-muted">${item.description}</span></div>
+      ${item.amount != null ? `<p class="text-xs font-bold tabular-nums text-warning shrink-0">${formatTomanShort(item.amount)}</p>` : '<i data-lucide="chevron-left" class="w-4 h-4 text-fg-muted shrink-0"></i>'}
+    </button>
   `).join('');
-
-  return `
-    <div>
-      ${SectionHeader({ title: 'یادآوری‌ها' })}
-      <div class="space-y-2 mt-2.5">${listHtml}</div>
+  openSheet(`
+    <div class="pb-2">
+      <div class="flex items-center justify-between mb-4">
+        <div><h3 class="text-base font-bold">یادآوری‌ها</h3><p class="text-[11px] text-fg-muted mt-1">${toPersianDigits(items.length)} مورد نیازمند پیگیری</p></div>
+        <button onclick="window.__closeDashboardReminders()" class="w-8 h-8 rounded-lg glass flex items-center justify-center" aria-label="بستن"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="space-y-2 max-h-[65vh] overflow-y-auto">${listHtml}</div>
     </div>
-  `;
+  `);
+  window.__closeDashboardReminders = closeSheet;
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderBalanceCard(summary, percent) {
