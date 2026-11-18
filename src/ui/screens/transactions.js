@@ -987,7 +987,7 @@ function deleteTransfer(id, afterChange = renderTransactionsPage) {
     try {
       const updated = await repo.partnerTransfers.update(id, { deletedAt: new Date().toISOString() });
       state.updateEntity('partnerTransfers', updated);
-      renderTransactionsPage();
+      afterChange();
 
       showToast('حذف شد', 'success', {
         duration: 5000,
