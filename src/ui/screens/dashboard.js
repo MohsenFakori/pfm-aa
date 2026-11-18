@@ -50,6 +50,7 @@ export function renderDashboardPage() {
       ${renderTodaySummary()}
       ${renderBalanceCard(summary, progressPercent)}
       ${renderQuickStats(summary)}
+      ${summary.partnerDebtTotal > 0 ? renderPartnerDebtSummary(summary) : ''}
       ${renderQuickActions()}
       ${activeProjects.length > 0 ? renderActiveProjects(activeProjects) : ''}
       ${recentItems.length > 0 ? renderRecentTransactions(recentItems) : ''}
@@ -256,6 +257,26 @@ function renderQuickStats(summary) {
     <div class="grid grid-cols-2 gap-3">
       ${StatCard({ icon: 'arrow-down-left', iconColor: 'success', label: 'درآمد ماه', value: formatTomanShort(summary.monthInflow) })}
       ${StatCard({ icon: 'arrow-up-right', iconColor: 'danger', label: 'هزینه ماه', value: formatTomanShort(summary.monthOutflow) })}
+    </div>
+  `;
+}
+
+function renderPartnerDebtSummary(summary) {
+  return `
+    <div onclick="window.__navigate('/partners')" class="glass-strong rounded-2xl p-4 cursor-pointer hover:bg-white/8 transition">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-danger-soft text-danger flex items-center justify-center"><i data-lucide="users" class="w-4 h-4"></i></div>
+          <div><p class="text-xs font-bold">بدهی بین شرکا</p><p class="text-[10px] text-fg-muted mt-0.5">${toPersianDigits(summary.partnerDebtorsCount)} بدهکار · ${toPersianDigits(summary.partnerCreditorsCount)} طلبکار</p></div>
+        </div>
+        <i data-lucide="chevron-left" class="w-4 h-4 text-fg-muted"></i>
+      </div>
+      <p class="text-xl font-bold text-danger tabular-nums">${formatToman(summary.partnerDebtTotal)}</p>
+      <p class="text-[10px] text-fg-muted mt-1">مجموع مطالبات شرکای طلبکار؛ برای مشاهده جزئیات لمس کنید</p>
+      ${summary.topPartnerDebtors.length ? `
+        <div class="mt-3 pt-2 border-t border-white/5 space-y-1.5">
+          ${summary.topPartnerDebtors.map(b => `<div class="flex items-center justify-between text-[10px]"><span class="text-fg-muted">${b.partner.name} · بدهکار</span><span class="font-bold text-danger tabular-nums">${formatTomanShort(Math.abs(b.netPosition))}</span></div>`).join('')}
+        </div>` : ''}
     </div>
   `;
 }
