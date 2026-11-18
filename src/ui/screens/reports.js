@@ -313,7 +313,7 @@ function renderPartnerBalances() {
   const totalDebtorObligations = balances.reduce((s, b) => s + Math.max(0, -b.netPosition), 0);
   const sorted = [...balances].sort((a, b) => b.netPosition - a.netPosition);
   const unknownProjects = (state.data.projects || []).filter(p =>
-    !p.deletedAt && p.status !== 'archived' && (p.amountUndetermined === true || p.amount == null)
+    !p.deletedAt && (p.amountUndetermined === true || p.amount == null)
   );
   const warning = unknownProjects.length > 0 ? `
     <div class="rounded-xl border border-warning/30 bg-warning/10 p-3.5 flex items-start gap-2.5">
