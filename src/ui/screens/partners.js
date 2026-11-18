@@ -108,6 +108,7 @@ export function renderPartnersPage() {
   window.__setTxFilterType = (type) => { txFilterType = type; renderPartnersPage(); };
   window.__editPartnerTransfer = (id) => openTransferEditor(id, renderPartnersPage);
   window.__deletePartnerTransfer = (id) => removeTransferRecord(id, renderPartnersPage);
+  window.__showPartnerTransactions = (id) => { txFilterPartner = id; txFilterType = 'all'; partnerTab = 'transactions'; renderPartnersPage(); };
 }
 
 function getFilteredPartners(allPartners) {
@@ -410,7 +411,10 @@ function renderPartnerCard(partner) {
           <span class="text-xs font-bold ${posColor} tabular-nums">${formatToman(Math.abs(balance.netPosition))}</span>
         </div>
       </div>
-      <i data-lucide="chevron-left" class="w-4 h-4 text-fg-muted shrink-0"></i>
+      <div class="flex flex-col items-center gap-1 shrink-0">
+        <button onclick="event.stopPropagation(); window.__showPartnerTransactions('${partner.id}')" class="px-2 py-1.5 rounded-lg bg-info-soft text-purple-300 text-[9px] font-medium whitespace-nowrap">سوابق مالی</button>
+        <i data-lucide="chevron-left" class="w-4 h-4 text-fg-muted"></i>
+      </div>
     </div>
   `;
 }
