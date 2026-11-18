@@ -159,13 +159,13 @@ export function getPartnerBalance(partnerId, data = null) {
   const shares = (state.projectShares || []).filter(s => s.partnerId === partnerId);
   const unknownProjectIds = [...new Set(shares.reduce((ids, share) => {
     const project = (state.projects || []).find(p => p.id === share.projectId);
-    if (!project || project.deletedAt || project.status === 'archived') return ids;
+    if (!project || project.deletedAt) return ids;
     if (project.amountUndetermined === true || project.amount == null) ids.push(project.id);
     return ids;
   }, []))];
   const expectedShare = shares.reduce((s, share) => {
     const project = (state.projects || []).find(p => p.id === share.projectId);
-    if (!project || project.deletedAt || project.status === 'archived') return s;
+    if (!project || project.deletedAt) return s;
     if (project.amountUndetermined === true || project.amount == null) return s;
     return s + Math.round(project.amount * share.percentage / 100);
   }, 0);
