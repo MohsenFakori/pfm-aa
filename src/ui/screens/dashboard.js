@@ -208,6 +208,21 @@ function renderReminders() {
     }
   }
 
+  // پروژه‌های فعال/تکمیل‌شده با مبلغ نامشخص؛ یادآوری برای تکمیل اطلاعات مالی
+  const unknownProjects = (state.data.projects || []).filter(p =>
+    !p.deletedAt && p.status !== 'archived' && (p.amountUndetermined === true || p.amount == null)
+  );
+  for (const p of unknownProjects) {
+    items.push({
+      type: 'unknown-project',
+      icon: 'circle-help',
+      color: 'warning',
+      title: p.title,
+      description: 'مبلغ پروژه مشخص نشده',
+      path: `/project/${p.id}`
+    });
+  }
+
   // کارفرماهای بدهکار
   const employers = (state.data.employers || []).filter(e => !e.deletedAt);
   for (const e of employers) {
@@ -230,7 +245,8 @@ function renderReminders() {
   const top = items.slice(0, 3);
   const colorMap = {
     cta: 'bg-cta/15 text-cta',
-    danger: 'bg-danger-soft text-danger'
+    danger: 'bg-danger-soft text-danger',
+    warning: 'bg-warning-soft text-warning'
   };
 
   const listHtml = top.map(item => `
@@ -240,9 +256,9 @@ function renderReminders() {
       </div>
       <div class="flex-1 min-w-0">
         <p class="text-xs font-bold truncate">${item.title}</p>
-        <span class="inline-block mt-1 px-1.5 py-0.5 rounded-md bg-warning-soft text-warning text-[9px] font-medium">تسویه نشده</span>
+        <span class="inline-block mt-1 px-1.5 py-0.5 rounded-md ${item.type === 'unknown-project' ? 'bg-warning-soft text-warning' : 'bg-warning-soft text-warning'} text-[9px] font-medium">${item.description || 'تسویه نشده'}</span>
       </div>
-      <p class="text-xs font-bold tabular-nums text-warning shrink-0">${formatTomanShort(item.amount)}</p>
+      ${item.type === 'unknown-project' ? '<i data-lucide="chevron-left" class="w-4 h-4 text-fg-muted shrink-0"></i>' : `<p class="text-xs font-bold tabular-nums text-warning shrink-0">${formatTomanShort(item.amount)}</p>`}
     </div>
   `).join('');
 
