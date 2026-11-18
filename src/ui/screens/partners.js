@@ -9,6 +9,7 @@ import { Avatar, Input, Textarea, EmptyState, Badge } from '../components/ui.js'
 import { formatToman, formatTomanShort } from '../../utils/number.js';
 import { formatJalali, toPersianDigits, today } from '../../utils/date.js';
 import { getPartnerBalance } from '../../domain/calculations.js';
+import { openTransferEditor, removeTransferRecord } from './transactions.js';
 import { validate, AVATAR_COLORS } from '../../domain/validators.js';
 
 const COLOR_GRADIENTS = {
@@ -105,6 +106,8 @@ export function renderPartnersPage() {
   window.__setPartnerTab = (tab) => { partnerTab = tab; renderPartnersPage(); };
   window.__setTxFilterPartner = (pid) => { txFilterPartner = pid; renderPartnersPage(); };
   window.__setTxFilterType = (type) => { txFilterType = type; renderPartnersPage(); };
+  window.__editPartnerTransfer = (id) => openTransferEditor(id, renderPartnersPage);
+  window.__deletePartnerTransfer = (id) => removeTransferRecord(id, renderPartnersPage);
 }
 
 function getFilteredPartners(allPartners) {
@@ -289,7 +292,8 @@ function renderTransactionsTab(allPartners) {
       toName: toP ? toP.name : '—',
       fromId: t.fromPartnerId,
       toId: t.toPartnerId,
-      partnerIds: [t.fromPartnerId, t.toPartnerId]
+      partnerIds: [t.fromPartnerId, t.toPartnerId],
+      note: t.note || ''
     });
   }
 
@@ -357,9 +361,15 @@ function renderTransactionsTab(allPartners) {
                   <p class="text-xs font-bold truncate">${item.fromName} → ${item.toName}</p>
                   ${Badge({ variant: 'info', label: 'انتقال', classes: 'shrink-0' })}
                 </div>
-                <p class="text-[10px] text-fg-muted mt-0.5">${formatJalali(item.date)}</p>
+                <p class="text-[10px] text-fg-muted mt-0.5">${formatJalali(item.date)} ${item.note ? '· ' + item.note : ''}</p>
               </div>
-              <p class="text-xs font-bold text-fg-muted tabular-nums shrink-0">${formatTomanShort(item.amount)}</p>
+              <div class="text-left shrink-0">
+                <p class="text-xs font-bold text-fg-muted tabular-nums">${formatTomanShort(item.amount)}</p>
+                <div class="flex items-center justify-end gap-1 mt-1">
+                  <button onclick="window.__editPartnerTransfer('${item.id}')" class="w-7 h-7 rounded-lg glass text-brand flex items-center justify-center" aria-label="ویرایش انتقال"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                  <button onclick="window.__deletePartnerTransfer('${item.id}')" class="w-7 h-7 rounded-lg glass text-danger flex items-center justify-center" aria-label="حذف انتقال"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                </div>
+              </div>
             </div>
           `;
         }
