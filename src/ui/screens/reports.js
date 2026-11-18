@@ -299,7 +299,19 @@ function renderPartnerBalances() {
   if (balances.length === 0) return EmptyState({ icon: 'users', title: 'هنوز شریکی ثبت نشده', description: 'برای مشاهده گزارش تراز شرکا، ابتدا شریک و پروژه ثبت کنید.' });
   const totalNet = balances.reduce((s, b) => s + b.netPosition, 0);
   const sorted = [...balances].sort((a, b) => b.netPosition - a.netPosition);
-  return `<div class="space-y-4">${renderPartnerSummary(null, null, totalNet)}<div class="space-y-2.5">${sorted.map(renderPartnerBalanceRow).join('')}</div></div>`;
+  const unknownProjects = (state.data.projects || []).filter(p =>
+    !p.deletedAt && p.status !== 'archived' && (p.amountUndetermined === true || p.amount == null)
+  );
+  const warning = unknownProjects.length > 0 ? `
+    <div class="rounded-xl border border-warning/30 bg-warning/10 p-3.5 flex items-start gap-2.5">
+      <i data-lucide="alert-triangle" class="w-4 h-4 text-warning shrink-0 mt-0.5"></i>
+      <div class="min-w-0">
+        <p class="text-xs font-bold text-warning">گزارش تسویه شرکا قطعی نیست</p>
+        <p class="text-[10px] text-fg-muted mt-1 leading-5">${toPersianDigits(unknownProjects.length)} پروژه فعال یا تکمیل‌شده مبلغ نامشخص دارد. سهم نهایی شرکا و وضعیت تسویه تا تعیین مبلغ این پروژه‌ها قابل محاسبه دقیق نیست.</p>
+        <button onclick="window.__navigate('/projects')" class="text-[10px] text-warning font-bold mt-2">مشاهده پروژه‌ها</button>
+      </div>
+    </div>` : '';
+  return `<div class="space-y-4">${warning}${renderPartnerSummary(null, null, totalNet)}<div class="space-y-2.5">${sorted.map(renderPartnerBalanceRow).join('')}</div></div>`;
 }
 
 function renderPartnerSummary(_, __, totalNet) {
@@ -317,14 +329,15 @@ function renderPartnerBalanceRow(b) {
   const firstLetter = (b.partner.name || '').charAt(0);
   const color = b.partner.avatarColor || 'brand';
   let statusBadge;
-  if (b.status === 'creditor') statusBadge = Badge({ variant: 'success', label: 'طلبکار' });
+  if (b.hasUnknownProjectAmounts) statusBadge = Badge({ variant: 'warning', label: 'نیازمند بررسی' });
+  else if (b.status === 'creditor') statusBadge = Badge({ variant: 'success', label: 'طلبکار' });
   else if (b.status === 'debtor') statusBadge = Badge({ variant: 'danger', label: 'بدهکار' });
   else statusBadge = Badge({ variant: 'default', label: 'تسویه' });
 
-  let posLabel = 'تسویه';
-  let posColor = 'text-fg-muted';
-  if (b.netPosition > 0) { posLabel = 'طلب از شرکا'; posColor = 'text-success'; }
-  else if (b.netPosition < 0) { posLabel = 'بدهی به شرکا'; posColor = 'text-danger'; }
+  let posLabel = b.hasUnknownProjectAmounts ? 'وضعیت نهایی نامشخص' : 'تسویه';
+  let posColor = b.hasUnknownProjectAmounts ? 'text-warning' : 'text-fg-muted';
+  if (!b.hasUnknownProjectAmounts && b.netPosition > 0) { posLabel = 'طلب از شرکا'; posColor = 'text-success'; }
+  else if (!b.hasUnknownProjectAmounts && b.netPosition < 0) { posLabel = 'بدهی به شرکا'; posColor = 'text-danger'; }
 
   return `
     <div class="glass rounded-2xl p-3.5">
@@ -348,8 +361,9 @@ function renderPartnerBalanceRow(b) {
       <div class="border-t border-white/5 pt-2 mt-2">
         <div class="flex items-center justify-between">
           <span class="text-[11px] ${posColor}">${posLabel}</span>
-          <span class="text-sm font-bold tabular-nums ${posColor}">${formatToman(Math.abs(b.netPosition))}</span>
+          <span class="text-sm font-bold tabular-nums ${posColor}">${b.hasUnknownProjectAmounts ? '—' : formatToman(Math.abs(b.netPosition))}</span>
         </div>
+        ${b.hasUnknownProjectAmounts ? `<p class="text-[10px] text-fg-muted mt-1">سهم این شریک در ${toPersianDigits(b.unknownProjectCount)} پروژه هنوز مشخص نیست.</p>` : ''}
       </div>
     </div>
   `;
