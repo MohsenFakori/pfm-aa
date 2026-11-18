@@ -111,7 +111,11 @@ function renderEmployerCard(employer) {
   let balanceColor = 'text-fg-muted';
   let balanceDisplay = formatToman(0);
 
-  if (balance.balance > 0) {
+  if (balance.hasUnknownProjectAmounts) {
+    balanceLabel = 'تراز موقت · نیازمند بررسی';
+    balanceColor = 'text-warning';
+    balanceDisplay = formatToman(Math.abs(balance.balance));
+  } else if (balance.balance > 0) {
     balanceLabel = 'بدهکار';
     balanceColor = 'text-danger';
     balanceDisplay = formatToman(balance.balance);
