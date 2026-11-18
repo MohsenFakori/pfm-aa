@@ -382,7 +382,7 @@ export function getDashboardSummary(data = null) {
   const debtors = (state.employers || [])
     .filter(e => !e.deletedAt)
     .map(e => ({ employer: e, ...getEmployerBalance(e.id, state) }))
-    .filter(b => b.balance > 0)
+    .filter(b => b.status === 'debtor')
     .sort((a, b) => b.balance - a.balance);
 
   return {
