@@ -153,9 +153,10 @@ function renderPartnerOverview(partners) {
       <div class="grid grid-cols-2 gap-3">
         <div><p class="text-[10px] text-fg-muted">حق‌السهم کل</p><p class="text-sm font-bold tabular-nums">${formatTomanShort(expected)}${unknown ? ' · تقریبی' : ''}</p></div>
         <div><p class="text-[10px] text-fg-muted">دریافتی کل</p><p class="text-sm font-bold text-success tabular-nums">${formatTomanShort(received)}</p></div>
-        <div><p class="text-[10px] text-fg-muted">بیشتر از سهم</p><p class="text-sm font-bold text-danger tabular-nums">${formatTomanShort(over)}</p></div>
-        <div><p class="text-[10px] text-fg-muted">کمتر از سهم</p><p class="text-sm font-bold text-warning tabular-nums">${formatTomanShort(under)}</p></div>
+        <div><p class="text-[10px] text-fg-muted">بیشتر از سهم وصول‌شده</p><p class="text-sm font-bold text-danger tabular-nums">${formatTomanShort(over)}</p></div>
+        <div><p class="text-[10px] text-fg-muted">کمتر از سهم وصول‌شده</p><p class="text-sm font-bold text-warning tabular-nums">${formatTomanShort(under)}</p></div>
       </div>
+      <p class="text-[9px] text-fg-muted mt-2">تراز شرکا فقط بر اساس مبالغ تخصیص‌یافته از دریافتی‌های کارفرما محاسبه می‌شود؛ مطالبات وصول‌نشده از کارفرما به‌تنهایی بدهی شریک دیگر نیست.</p>
       <div class="mt-3 pt-2 border-t border-white/5 flex items-center justify-between">
         <span class="text-[10px] text-fg-muted">مطالبات باز بین شرکا</span>
         <span class="text-sm font-bold text-danger tabular-nums">${formatTomanShort(debt)}</span>
@@ -452,7 +453,7 @@ function openPartnerDetails(partnerId) {
   if (!partner) return;
   const b = getPartnerBalance(partnerId, state.data);
   const shareColor = b.shareDifference > 0 ? 'text-danger' : b.shareDifference < 0 ? 'text-warning' : 'text-success';
-  const shareLabel = b.shareDifference > 0 ? 'بیشتر از حق‌السهم دریافت کرده' : b.shareDifference < 0 ? 'کمتر از حق‌السهم دریافت کرده' : 'دریافتی مطابق حق‌السهم';
+  const shareLabel = b.shareDifference > 0 ? 'بیشتر از سهم مبالغ وصول‌شده دریافت کرده' : b.shareDifference < 0 ? 'کمتر از سهم مبالغ وصول‌شده دریافت کرده' : 'دریافتی مطابق سهم مبالغ وصول‌شده';
   const positionColor = b.netPosition > 0 ? 'text-success' : b.netPosition < 0 ? 'text-danger' : 'text-fg-muted';
   const positionLabel = b.netPosition > 0 ? 'طلبکار از سایر شرکا' : b.netPosition < 0 ? 'بدهکار به سایر شرکا' : 'تسویه';
   openSheet(`
@@ -465,10 +466,13 @@ function openPartnerDetails(partnerId) {
         <p class="text-xs font-bold mb-2">حق‌السهم و دریافتی</p>
         <div class="grid grid-cols-2 gap-3">
           <div><p class="text-[10px] text-fg-muted">حق‌السهم پروژه‌ها</p><p class="text-sm font-bold">${formatTomanShort(b.expectedShare)}</p></div>
-          <div><p class="text-[10px] text-fg-muted">دریافتی از کارفرما</p><p class="text-sm font-bold text-success">${formatTomanShort(b.actualReceivedFromEmployers)}</p></div>
+          <div><p class="text-[10px] text-fg-muted">دریافتی ثبت‌شده</p><p class="text-sm font-bold text-success">${formatTomanShort(b.actualReceivedFromEmployers)}</p></div>
+          <div><p class="text-[10px] text-fg-muted">دریافتی تخصیص‌یافته</p><p class="text-sm font-bold text-success">${formatTomanShort(b.allocatedReceivedFromEmployers)}</p></div>
+          <div><p class="text-[10px] text-fg-muted">سهم از مبالغ وصول‌شده</p><p class="text-sm font-bold">${formatTomanShort(b.collectedShare)}</p></div>
           <div class="col-span-2"><p class="text-[10px] ${shareColor}">${shareLabel}</p><p class="text-base font-bold ${shareColor}">${formatToman(Math.abs(b.shareDifference))}</p></div>
         </div>
-        ${b.hasUnknownProjectAmounts ? `<p class="text-[10px] text-warning mt-2">سهم نهایی به دلیل ${toPersianDigits(b.unknownProjectCount)} پروژه با مبلغ نامشخص، قطعی نیست.</p>` : ''}
+        <p class="text-[9px] text-fg-muted mt-2">تراز بین شرکا بر اساس مبالغ وصول‌شده و تخصیص‌یافته به پروژه‌هاست؛ مانده وصول‌نشده از کارفرما به‌عنوان بدهی شریک دیگر محاسبه نمی‌شود.</p>
+        ${b.hasUnknownProjectAmounts ? `<p class="text-[10px] text-warning mt-2">حق‌السهم کل به دلیل ${toPersianDigits(b.unknownProjectCount)} پروژه با مبلغ نامشخص، قطعی نیست؛ اما سهم از مبالغ تخصیص‌یافته قابل محاسبه است.</p>` : ''}
       </div>
       <div class="glass rounded-xl p-3 mb-3">
         <p class="text-xs font-bold mb-2">تسویه بین شرکا</p>
