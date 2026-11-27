@@ -201,9 +201,14 @@ function openCreditAllocationForm(employerId) {
   if (credit <= 0) { showToast('علی‌الحسابی برای تخصیص وجود ندارد', 'info'); return; }
 
   const employerProjects = (state.data.projects || []).filter(p =>
-    p.employerId === employerId && !p.deletedAt && p.status !== 'archived'
+    p.employerId === employerId &&
+    !p.deletedAt &&
+    p.status !== 'archived' &&
+    p.amountUndetermined !== true &&
+    p.amount != null &&
+    getProjectRemaining(p.id, state.data) > 0
   );
-  if (employerProjects.length === 0) { showToast('پروژه‌ای برای تخصیص وجود ندارد', 'warning'); return; }
+  if (employerProjects.length === 0) { showToast('پروژه‌ای با بدهی قابل تخصیص برای این کارفرما وجود ندارد', 'warning'); return; }
 
   // ترتیب انتخاب پروژه‌ها حفظ می‌شود تا تخصیص از اولین انتخاب آغاز شود.
   const selectedProjectIds = [];
@@ -288,8 +293,8 @@ function openCreditAllocationForm(employerId) {
 }
 
 // === ذخیره تخصیص علی‌الحساب ===
-// این تخصص مازاد دریافتی را به یک پروژه اختصاص می‌دهد
-// با ایجاد یک ReceiptAllocation روی یکی از receiptهای این کارفرما که surplus دارد
+// مبلغ انتخاب‌شده به ترتیب پروژه‌های تیک‌خورده و تا سقف بدهی هر پروژه تخصیص می‌یابد.
+// تخصیص‌ها روی receiptهای این کارفرما که مازاد دارند ثبت می‌شوند.
 async function saveCreditAllocation(employerId, maxCredit, employerSheet, selectedProjectIds) {
   const sheet = document.querySelector('.bottom-sheet:not(.date-picker-sheet)');
   if (!sheet) return;
