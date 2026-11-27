@@ -479,13 +479,13 @@ function openPartnerDetails(partnerId) {
           <div><p class="text-[10px] text-fg-muted">انتقال پرداختی</p><p class="text-xs font-bold">${formatTomanShort(b.transferredOut)}</p></div>
         </div>
         <div class="mt-3 pt-2 border-t border-white/5 flex items-center justify-between"><span class="text-[10px] ${positionColor}">${positionLabel}</span><span class="text-sm font-bold ${positionColor}">${formatToman(Math.abs(b.netPosition))}</span></div>
+      </div>
       <div class="glass rounded-xl p-3 mb-3">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold">تراز نهایی با احتساب سهم پروژه‌ها</span>
           <span class="text-sm font-bold ${b.overallPosition > 0 ? 'text-danger' : b.overallPosition < 0 ? 'text-success' : 'text-fg-muted'}">${b.overallPosition > 0 ? 'بدهکار' : b.overallPosition < 0 ? 'طلبکار' : 'تسویه'}</span>
         </div>
         <p class="text-lg font-bold mt-1 ${b.overallPosition > 0 ? 'text-danger' : b.overallPosition < 0 ? 'text-success' : 'text-fg-muted'}">${formatToman(Math.abs(b.overallPosition))}</p>
-      </div>
       </div>
       <div class="flex gap-2">
         <button onclick="window.__closePartnerDetails(); window.__showPartnerTransactions('${partner.id}')" class="flex-1 h-10 rounded-xl glass text-xs font-medium">سوابق مالی</button>
