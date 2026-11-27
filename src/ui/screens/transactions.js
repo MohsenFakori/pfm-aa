@@ -754,19 +754,27 @@ function silentAutoSuggest() {
   const receiptAmount = parseIntAmount(transactionFormState.amount);
   if (receiptAmount <= 0) return;
   if (transactionFormState.selectedProjects.length === 0) return;
+
   const employerId = transactionFormState.employerId;
-  const projects = (state.data.projects || []).filter(p => !p.deletedAt && p.employerId === employerId && p.status !== 'archived');
-  const projectDebts = transactionFormState.selectedProjects
-    .map(pid => projects.find(p => p.id === pid))
-    .filter(Boolean)
-    .map(p => ({ id: p.id, remaining: getProjectRemaining(p.id, state.data) }))
-    .filter(p => p.remaining > 0);
-  if (projectDebts.length === 0) return;
-  const result = suggestAllocation(receiptAmount, projectDebts);
-  for (const alloc of result.allocations) {
-    if (transactionFormState.selectedProjects.includes(alloc.projectId) && !transactionFormState.allocationDirty[alloc.projectId]) {
-      transactionFormState.allocations[alloc.projectId] = String(alloc.amount);
+  const projects = (state.data.projects || []).filter(p =>
+    !p.deletedAt && p.employerId === employerId && p.status !== 'archived'
+  );
+
+  // به ترتیب انتخاب پیش می‌رویم؛ مبالغی که کاربر دستی وارد کرده از مانده کسر می‌شوند.
+  let remainingAmount = receiptAmount;
+  for (const pid of transactionFormState.selectedProjects) {
+    const project = projects.find(p => p.id === pid);
+    if (!project) continue;
+
+    const projectRemaining = getProjectRemaining(pid, state.data);
+    if (transactionFormState.allocationDirty[pid]) {
+      remainingAmount -= parseIntAmount(transactionFormState.allocations[pid] || '0');
+      continue;
     }
+
+    const amount = Math.min(projectRemaining, Math.max(0, remainingAmount));
+    transactionFormState.allocations[pid] = String(amount);
+    remainingAmount -= amount;
   }
 }
 
