@@ -321,7 +321,7 @@ function renderPartnerBalances() {
       <i data-lucide="alert-triangle" class="w-4 h-4 text-warning shrink-0 mt-0.5"></i>
       <div class="min-w-0">
         <p class="text-xs font-bold text-warning">محاسبه حق‌السهم هنوز کامل نیست</p>
-        <p class="text-[10px] text-fg-muted mt-1 leading-5">${toPersianDigits(unknownProjects.length)} پروژه مبلغ نامشخص دارد؛ مجموع حق‌السهم‌ها و مقایسه دریافتی با سهم نهایی ممکن است کمتر از مقدار واقعی باشد. تراز هزینه‌ها و انتقال‌های ثبت‌شده جداگانه محاسبه شده است.</p>
+        <p class="text-[10px] text-fg-muted mt-1 leading-5">${toPersianDigits(unknownProjects.length)} پروژه مبلغ نامشخص دارد؛ بنابراین مجموع حق‌السهم قراردادی قطعی نیست. با این حال، سهم هر شریک از مبالغی که به پروژه‌ها تخصیص یافته‌اند جداگانه محاسبه می‌شود.</p>
         <button onclick="window.__navigate('/projects')" class="text-[10px] text-warning font-bold mt-2">مشاهده پروژه‌ها</button>
       </div>
     </div>` : '';
