@@ -5,6 +5,7 @@ import { navigate, getCurrentRoute } from '../../core/router.js';
 import { state } from '../../core/state.js';
 import { openDrawer, closeDrawer, openSheet, closeSheet } from './sheet.js';
 import { icon } from './icons.js';
+import { getReminderItems, openDashboardReminders } from '../screens/dashboard.js';
 
 const PAGE_TITLES = {
   '/dashboard': 'داشبورد',
@@ -63,6 +64,7 @@ function renderHeader() {
     '/project/add': '/projects'
   };
   const backPath = current.startsWith('/project/') ? '/projects' : backRoutes[current];
+  const reminderCount = getReminderItems().length;
   const showBack = Boolean(backPath);
 
   return `
@@ -77,7 +79,7 @@ function renderHeader() {
             </button>`
         }
         <h1 class="text-sm font-bold">${title}</h1>
-        <button onclick="window.__openSearch()" class="w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="جستجو">
+        <div class="flex items-center gap-2"><button onclick="window.__openDashboardReminders()" class="relative w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="یادآوری‌ها"><i data-lucide="bell" class="w-5 h-5"></i><span class="absolute -top-1 -left-1 min-w-4 h-4 px-1 rounded-full bg-danger text-white text-[9px]">${reminderCount}</span></button><button onclick="window.__openSearch()" class="w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="جستجو">
           <i data-lucide="search" class="w-5 h-5"></i>
         </button>
       </div>
@@ -184,6 +186,7 @@ export function renderShell() {
   };
   window.closeDrawer = closeDrawer;
   window.__openSearch = openSearch;
+  window.__openDashboardReminders = openDashboardReminders;
 
   if (window.lucide) window.lucide.createIcons();
 }
