@@ -79,7 +79,7 @@ function renderHeader() {
             </button>`
         }
         <h1 class="text-sm font-bold">${title}</h1>
-        <div class="flex items-center gap-2"><button onclick="window.__openDashboardReminders()" class="relative w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="یادآوری‌ها"><i data-lucide="bell" class="w-5 h-5"></i><span class="absolute -top-1 -left-1 min-w-4 h-4 px-1 rounded-full bg-danger text-white text-[9px]">${reminderCount}</span></button><button onclick="window.__openSearch()" class="w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="جستجو">
+        <div class="flex items-center gap-2"><button onclick="window.__openDashboardReminders()" class="relative w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="یادآوری‌ها"><i data-lucide="bell" class="w-5 h-5"></i>${reminderCount > 0 ? '<span class="absolute -top-1 -left-1 min-w-4 h-4 px-1 rounded-full bg-danger text-white text-[9px]">' + reminderCount + '</span>' : ''}</button><button onclick="window.__openSearch()" class="w-10 h-10 rounded-xl glass flex items-center justify-center" aria-label="جستجو">
           <i data-lucide="search" class="w-5 h-5"></i>
         </button>
       </div>
@@ -143,16 +143,16 @@ function renderDrawer() {
   const content = `
     <div class="p-5">
       <!-- Profile section -->
-      <button onclick="window.closeDrawer(); window.__navigate(&quot;/profile&quot;)" class="w-full flex items-center gap-3 mb-6 pb-5 border-b border-line text-right">
-        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-cta flex items-center justify-center text-white font-bold text-lg">${avatarHtml}</div>
-        <div class="flex-1">
-          <p class="text-sm font-bold">${userName}</p>
-          <p class="text-[10px] text-fg-muted">مشاهده و ویرایش پروفایل</p>
-        </div>
-        <button onclick="window.closeDrawer()" class="hidden">
+      <div class="mb-6 pb-5 border-b border-line">
+        <button onclick="window.closeDrawer(); window.__navigate('/profile')" class="w-full flex items-center gap-3 text-right">
+          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-cta flex items-center justify-center text-white font-bold text-lg">${avatarHtml}</div>
+          <div class="flex-1">
+            <p class="text-sm font-bold">${userName}</p>
+            <p class="text-[10px] text-fg-muted">مشاهده و ویرایش پروفایل</p>
+          </div>
           <i data-lucide="chevron-left" class="w-4 h-4 text-fg-muted"></i>
         </button>
-
+      </div>
       <!-- Menu items -->
       <div class="space-y-1.5">
         ${itemsHtml}
