@@ -272,10 +272,10 @@ function renderPartnerDebtSummary(summary) {
         <i data-lucide="chevron-left" class="w-4 h-4 text-fg-muted"></i>
       </div>
       <p class="text-xl font-bold text-danger tabular-nums">${formatToman(summary.partnerDebtTotal)}</p>
-      <p class="text-[10px] text-fg-muted mt-1">مجموع مطالبات شرکای طلبکار؛ برای مشاهده جزئیات لمس کنید</p>
+      <p class="text-[10px] text-fg-muted mt-1">مجموع بدهی خالص شرکا؛ برای مشاهده جزئیات لمس کنید</p>
       ${summary.topPartnerDebtors.length ? `
         <div class="mt-3 pt-2 border-t border-white/5 space-y-1.5">
-          ${summary.topPartnerDebtors.map(b => `<div class="flex items-center justify-between text-[10px]"><span class="text-fg-muted">${b.partner.name} · بدهکار</span><span class="font-bold text-danger tabular-nums">${formatTomanShort(Math.abs(b.netPosition))}</span></div>`).join('')}
+          ${summary.topPartnerDebtors.map(b => `<div class="flex items-center justify-between text-[10px]"><span class="text-fg-muted">${b.partner.name} · بدهکار</span><span class="font-bold text-danger tabular-nums">${formatTomanShort(b.overallPosition)}</span></div>`).join('')}
         </div>` : ''}
     </div>
   `;
