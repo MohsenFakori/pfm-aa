@@ -124,6 +124,8 @@ function renderDrawer() {
   const userName = settings.userName || 'کاربر';
 
   const drawerAvatar = settings.userName ? settings.userName.charAt(0) : 'ک';
+  const avatarIcon = settings.avatarIcon || '';
+  const avatarHtml = avatarIcon ? '<i data-lucide="' + avatarIcon + '" class="w-6 h-6"></i>' : drawerAvatar;
 
   const itemsHtml = DRAWER_ITEMS.map(item => {
     const isActive = (getCurrentRoute() || '').startsWith(item.path);
@@ -141,16 +143,15 @@ function renderDrawer() {
   const content = `
     <div class="p-5">
       <!-- Profile section -->
-      <div class="flex items-center gap-3 mb-6 pb-5 border-b border-line">
-        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-cta flex items-center justify-center text-white font-bold text-lg">${drawerAvatar}</div>
+      <button onclick="window.closeDrawer(); window.__navigate(&quot;/profile&quot;)" class="w-full flex items-center gap-3 mb-6 pb-5 border-b border-line text-right">
+        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-cta flex items-center justify-center text-white font-bold text-lg">${avatarHtml}</div>
         <div class="flex-1">
           <p class="text-sm font-bold">${userName}</p>
-          <p class="text-[10px] text-fg-muted">حساب شخصی</p>
+          <p class="text-[10px] text-fg-muted">مشاهده و ویرایش پروفایل</p>
         </div>
-        <button onclick="window.closeDrawer()" class="w-8 h-8 rounded-lg glass flex items-center justify-center" aria-label="بستن">
-          <i data-lucide="x" class="w-4 h-4"></i>
+        <button onclick="window.closeDrawer()" class="hidden">
+          <i data-lucide="chevron-left" class="w-4 h-4 text-fg-muted"></i>
         </button>
-      </div>
 
       <!-- Menu items -->
       <div class="space-y-1.5">
