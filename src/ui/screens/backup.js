@@ -227,93 +227,21 @@ function clearAllData() {
 // =========== SETTINGS PAGE ===========
 export function renderSettingsPage() {
   const main = document.getElementById('page-content');
-  const settings = state.data.settings || {};
-  const userName = settings.userName || '';
-  const avatarColor = settings.avatarColor || 'brand';
-  const firstLetter = userName ? userName.charAt(0) : 'ک';
-  profileColorPicked = avatarColor;
-
   main.innerHTML = `
     <div class="px-4 pt-4 pb-28 space-y-4">
-      ${renderProfileCard(firstLetter, userName, avatarColor)}
-      ${renderQuickLinks()}
+      <div class="glass rounded-2xl">
+        <button onclick="window.__navigate('/backup')" class="w-full p-4 flex items-center gap-3 hover:bg-white/5 transition text-right">
+          <div class="w-9 h-9 rounded-xl glass flex items-center justify-center"><i data-lucide="database" class="w-4 h-4"></i></div>
+          <span class="flex-1 text-right text-sm font-medium">بکاپ و بازگردانی</span>
+          <i data-lucide="chevron-left" class="w-4 h-4 text-fg-muted"></i>
+        </button>
+      </div>
       ${renderAboutCard()}
     </div>
   `;
   if (window.lucide) window.lucide.createIcons();
-  window.__saveProfile = saveProfile;
-  window.__pickProfileColor = (color) => { profileColorPicked = color; refreshProfileColorPicker(); };
-  window.__navigate = (path) => navigate(path);
+  window.__navigate = path => navigate(path);
 }
-
-function renderProfileCard(firstLetter, userName, avatarColor) {
-  return `
-    <div class="glass rounded-2xl p-5">
-      <div class="flex items-center gap-3 mb-4">
-        ${Avatar({ text: firstLetter, color: avatarColor, size: 'xl' })}
-        <div class="flex-1"><p class="text-sm font-bold">${userName || 'بدون نام'}</p><p class="text-[10px] text-fg-muted">پروفایل شما</p></div>
-      </div>
-      <div class="space-y-3">
-        ${Input({ name: 'userName', label: 'نام', placeholder: 'نام شما', value: userName, icon: 'user' })}
-        <div>
-          <label class="text-xs text-fg-muted mb-1.5 block">رنگ آواتار</label>
-          <div class="flex flex-wrap gap-2" id="profile-color-picker">${renderColorPickerButtons(profileColorPicked)}</div>
-        </div>
-        <button onclick="window.__saveProfile()" class="w-full h-11 rounded-xl bg-brand hover:bg-brand-dark text-white text-sm font-medium transition flex items-center justify-center gap-2 shadow-lg shadow-brand/30">
-          <i data-lucide="check" class="w-4 h-4"></i> ذخیره
-        </button>
-      </div>
-    </div>
-  `;
-}
-
-function renderColorPickerButtons(selected) {
-  return AVATAR_COLORS.map(color => `
-    <button type="button" onclick="window.__pickProfileColor('${color}')" class="w-10 h-10 rounded-full bg-gradient-to-br ${COLOR_GRADIENTS[color]} flex items-center justify-center transition ${selected === color ? 'ring-2 ring-white ring-offset-2 ring-offset-ink-soft' : ''}">
-      ${selected === color ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
-    </button>
-  `).join('');
-}
-
-function refreshProfileColorPicker() {
-  const picker = document.getElementById('profile-color-picker');
-  if (picker) {
-    picker.innerHTML = renderColorPickerButtons(profileColorPicked);
-    if (window.lucide) window.lucide.createIcons();
-  }
-}
-
-function saveProfile() {
-  const nameInput = document.querySelector('input[name="userName"]');
-  const name = nameInput ? nameInput.value.trim() : '';
-  if (name.length < 1) { showToast('نام را وارد کنید', 'error'); return; }
-  state.updateSettings({ userName: name, avatarColor: profileColorPicked });
-  showToast('پروفایل ذخیره شد', 'success');
-  renderSettingsPage();
-}
-
-function renderQuickLinks() {
-  const links = [
-    { icon: 'database', label: 'بکاپ و بازگردانی', onClick: `window.__navigate('/backup')` }
-  ];
-  return `
-    <div class="glass rounded-2xl divide-y divide-line/50">
-      ${links.map(l => `
-        <button onclick="${l.onClick}" class="w-full p-4 flex items-center gap-3 hover:bg-white/5 transition text-right">
-          <div class="w-9 h-9 rounded-xl glass flex items-center justify-center"><i data-lucide="${l.icon}" class="w-4 h-4"></i></div>
-          <span class="flex-1 text-right text-sm font-medium">${l.label}</span>
-          <i data-lucide="chevron-left" class="w-4 h-4 text-fg-muted"></i>
-        </button>
-      `).join('')}
-      <button data-pwa-install class="w-full p-4 flex items-center gap-3 hover:bg-white/5 transition text-right">
-        <div class="w-9 h-9 rounded-xl glass flex items-center justify-center"><i data-lucide="download" class="w-4 h-4"></i></div>
-        <span class="flex-1 text-right text-sm font-medium">نصب اپلیکیشن</span>
-        <i data-lucide="chevron-left" class="w-4 h-4 text-fg-muted"></i>
-      </button>
-    </div>
-  `;
-}
-
 function renderAboutCard() {
   return `
     <div class="glass rounded-2xl p-5">
