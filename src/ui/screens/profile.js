@@ -75,11 +75,34 @@ export function renderProfilePage() {
       </section>
     </div>
   `;
-  window.__profileColor = color => { selectedColor = color; renderProfilePage(); };
-  window.__profileIcon = value => { selectedIcon = value; renderProfilePage(); };
+  window.__profileColor = color => { selectedColor = color; updateProfileChoices(); };
+  window.__profileIcon = value => { selectedIcon = value; updateProfileChoices(); };
   window.__saveUserProfile = saveUserProfile;
   window.__navigate = path => navigate(path);
   if (window.lucide) window.lucide.createIcons();
+}
+
+function updateProfileChoices() {
+  document.querySelectorAll('[data-avatar-color]').forEach(button => {
+    const selected = button.dataset.avatarColor === selectedColor;
+    button.classList.toggle('ring-2', selected);
+    button.classList.toggle('ring-white', selected);
+    button.classList.toggle('ring-offset-2', selected);
+    button.classList.toggle('ring-offset-ink-soft', selected);
+  });
+  document.querySelectorAll('[data-avatar-icon]').forEach(button => {
+    const selected = button.dataset.avatarIcon === selectedIcon;
+    button.classList.toggle('border', selected);
+    button.classList.toggle('border-brand', selected);
+    button.classList.toggle('text-brand', selected);
+    button.classList.toggle('bg-brand/10', selected);
+  });
+  const preview = document.getElementById('profile-avatar-preview');
+  if (preview) {
+    const name = document.getElementById('profile-name')?.value?.trim() || 'ک';
+    preview.innerHTML = selectedIcon ? '<i data-lucide="' + selectedIcon + '" class="w-6 h-6"></i>' : name.charAt(0);
+    if (window.lucide) window.lucide.createIcons();
+  }
 }
 
 function saveUserProfile() {
