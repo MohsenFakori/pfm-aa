@@ -125,6 +125,8 @@ function renderDrawer() {
 
   const drawerAvatar = settings.userName ? settings.userName.charAt(0) : 'ک';
   const avatarIcon = settings.avatarIcon || '';
+  const avatarGradients = { brand: 'from-brand to-brand-dark', cta: 'from-cta to-cta-dark', purple: 'from-purple-500 to-pink-500', cyan: 'from-cyan-500 to-blue-500', pink: 'from-pink-500 to-rose-500', success: 'from-success to-emerald-700', warning: 'from-warning to-cta', info: 'from-info to-purple-500' };
+  const avatarGradient = avatarGradients[settings.avatarColor] || avatarGradients.brand;
   const avatarHtml = avatarIcon ? '<i data-lucide="' + avatarIcon + '" class="w-6 h-6"></i>' : drawerAvatar;
 
   const itemsHtml = DRAWER_ITEMS.map(item => {
@@ -145,7 +147,7 @@ function renderDrawer() {
       <!-- Profile section -->
       <div class="mb-6 pb-5 border-b border-line">
         <button onclick="window.closeDrawer(); window.__navigate('/profile')" class="w-full flex items-center gap-3 text-right">
-          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-cta flex items-center justify-center text-white font-bold text-lg">${avatarHtml}</div>
+          <div class="w-12 h-12 rounded-full bg-gradient-to-br ${avatarGradient} flex items-center justify-center text-white font-bold text-lg">${avatarHtml}</div>
           <div class="flex-1">
             <p class="text-sm font-bold">${userName}</p>
             <p class="text-[10px] text-fg-muted">مشاهده و ویرایش پروفایل</p>
