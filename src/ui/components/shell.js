@@ -32,6 +32,8 @@ const NAV_ITEMS_RIGHT = [
   { path: '/reports', icon: 'chart-pie', label: 'گزارش' }
 ];
 
+let reminderSubscriptionsInitialized = false;
+
 const DRAWER_ITEMS = [
   { path: '/transactions', icon: 'arrow-left-right', label: 'تراکنش‌ها' },
   { path: '/employers', icon: 'briefcase', label: 'کارفرماها' },
@@ -87,6 +89,25 @@ function renderHeader() {
   `;
 }
 
+function refreshReminderButton() {
+  const button = document.querySelector('header button[aria-label="یادآوری‌ها"]');
+  if (!button) return;
+  const count = getReminderItems().length;
+  button.disabled = count === 0;
+  button.classList.toggle('opacity-50', count === 0);
+  let badge = button.querySelector('[data-reminder-count]');
+  if (count > 0) {
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.dataset.reminderCount = 'true';
+      badge.className = 'absolute -top-1 -left-1 min-w-4 h-4 px-1 rounded-full bg-danger text-white text-[9px]';
+      button.appendChild(badge);
+    }
+    badge.textContent = count > 9 ? '۹+' : String(count);
+  } else if (badge) {
+    badge.remove();
+  }
+}
 function renderBottomNav() {
   const current = getCurrentRoute() || '/dashboard';
 
@@ -190,6 +211,10 @@ export function renderShell() {
   window.closeDrawer = closeDrawer;
   window.__openSearch = openSearch;
   window.__openDashboardReminders = openDashboardReminders;
+  if (!reminderSubscriptionsInitialized) {
+    ['projects', 'receipts', 'receiptAllocations', 'employers'].forEach(path => state.subscribe(path, refreshReminderButton));
+    reminderSubscriptionsInitialized = true;
+  }
 
   if (window.lucide) window.lucide.createIcons();
 }
