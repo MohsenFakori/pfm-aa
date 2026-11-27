@@ -307,6 +307,7 @@ function renderPartnerBalances() {
 
   const totalExpectedShare = balances.reduce((s, b) => s + b.expectedShare, 0);
   const totalReceived = balances.reduce((s, b) => s + b.actualReceivedFromEmployers, 0);
+  const totalAllocatedReceived = balances.reduce((s, b) => s + b.allocatedReceivedFromEmployers, 0);
   const totalOverShare = balances.reduce((s, b) => s + b.overShare, 0);
   const totalUnderShare = balances.reduce((s, b) => s + b.underShare, 0);
   const totalCreditorClaims = balances.reduce((s, b) => s + Math.max(0, -b.overallPosition), 0);
@@ -333,8 +334,9 @@ function renderPartnerBalances() {
         <div class="grid grid-cols-2 gap-3">
           <div><p class="text-[10px] text-fg-muted mb-1">مجموع حق‌السهم</p><p class="text-sm font-bold tabular-nums">${formatTomanShort(totalExpectedShare)}</p></div>
           <div><p class="text-[10px] text-fg-muted mb-1">مجموع دریافتی ثبت‌شده</p><p class="text-sm font-bold text-success tabular-nums">${formatTomanShort(totalReceived)}</p></div>
-          <div><p class="text-[10px] text-fg-muted mb-1">بیشتر از سهم دریافت‌شده</p><p class="text-sm font-bold text-danger tabular-nums">${formatTomanShort(totalOverShare)}</p></div>
-          <div><p class="text-[10px] text-fg-muted mb-1">کمتر از سهم دریافت‌شده</p><p class="text-sm font-bold text-warning tabular-nums">${formatTomanShort(totalUnderShare)}</p></div>
+          <div><p class="text-[10px] text-fg-muted mb-1">دریافتی تخصیص‌یافته به پروژه‌ها</p><p class="text-sm font-bold text-success tabular-nums">${formatTomanShort(totalAllocatedReceived)}</p></div>
+          <div><p class="text-[10px] text-fg-muted mb-1">بیشتر از سهم مبالغ وصول‌شده</p><p class="text-sm font-bold text-danger tabular-nums">${formatTomanShort(totalOverShare)}</p></div>
+          <div><p class="text-[10px] text-fg-muted mb-1">کمتر از سهم مبالغ وصول‌شده</p><p class="text-sm font-bold text-warning tabular-nums">${formatTomanShort(totalUnderShare)}</p></div>
         </div>
       </div>
       <div class="glass-strong rounded-2xl p-4">
@@ -343,7 +345,7 @@ function renderPartnerBalances() {
           <div><p class="text-[10px] text-fg-muted mb-1">مجموع طلب شرکا</p><p class="text-sm font-bold text-success tabular-nums">${formatTomanShort(totalCreditorClaims)}</p></div>
           <div><p class="text-[10px] text-fg-muted mb-1">مجموع بدهی شرکا</p><p class="text-sm font-bold text-danger tabular-nums">${formatTomanShort(totalDebtorObligations)}</p></div>
         </div>
-        <p class="text-[9px] text-fg-muted mt-2">این ارقام تراز نهایی را با ترکیب حق‌السهم، دریافتی‌ها، هزینه‌ها و انتقال‌های بین شرکا نشان می‌دهند.</p>
+        <p class="text-[9px] text-fg-muted mt-2">تراز بین شرکا فقط بر اساس مبالغی محاسبه می‌شود که از کارفرما دریافت و به پروژه‌ها تخصیص یافته‌اند؛ مانده وصول‌نشده از کارفرما بدهی شریک دیگر محسوب نمی‌شود.</p>
       </div>
       <div class="space-y-2.5">${sorted.map(renderPartnerBalanceRow).join('')}</div>
     </div>
@@ -359,7 +361,7 @@ function renderPartnerBalanceRow(b) {
   else if (b.status === 'debtor') statusBadge = Badge({ variant: 'danger', label: 'بدهکار' });
   else statusBadge = Badge({ variant: 'default', label: 'تسویه' });
 
-  const shareLabel = b.shareDifference > 0 ? 'بیشتر از سهم' : b.shareDifference < 0 ? 'کمتر از سهم' : 'مطابق سهم';
+  const shareLabel = b.shareDifference > 0 ? 'بیشتر از سهم وصول‌شده' : b.shareDifference < 0 ? 'کمتر از سهم وصول‌شده' : 'مطابق سهم وصول‌شده';
   const shareColor = b.shareDifference > 0 ? 'text-danger' : b.shareDifference < 0 ? 'text-warning' : 'text-success';
   const positionLabel = b.overallPosition > 0 ? 'بدهکار به شرکا' : b.overallPosition < 0 ? 'طلبکار از شرکا' : 'تراز نهایی: تسویه';
   const positionColor = b.overallPosition > 0 ? 'text-danger' : b.overallPosition < 0 ? 'text-success' : 'text-fg-muted';
@@ -377,8 +379,8 @@ function renderPartnerBalanceRow(b) {
           <p class="text-xs font-bold tabular-nums">${formatTomanShort(b.expectedShare)}</p>
         </div>
         <div class="rounded-lg bg-white/5 py-2">
-          <p class="text-[9px] text-fg-muted">دریافتی از کارفرما</p>
-          <p class="text-xs font-bold text-success tabular-nums">${formatTomanShort(b.actualReceivedFromEmployers)}</p>
+          <p class="text-[9px] text-fg-muted">دریافتی تخصیص‌یافته</p>
+          <p class="text-xs font-bold text-success tabular-nums">${formatTomanShort(b.allocatedReceivedFromEmployers)}</p>
         </div>
         <div class="rounded-lg bg-white/5 py-2">
           <p class="text-[9px] text-fg-muted">${shareLabel}</p>
