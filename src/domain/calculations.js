@@ -170,11 +170,29 @@ export function getPartnerBalance(partnerId, data = null) {
     return s + Math.round(project.amount * share.percentage / 100);
   }, 0);
 
-  // دریافتی از کارفرماها
+  // دریافتی ثبت‌شده از کارفرماها (شامل علی‌الحساب تخصیص‌نیافته)
   const receipts = (state.receipts || []).filter(r =>
     r.receiverPartnerId === partnerId && !r.deletedAt
   );
   const actualReceivedFromEmployers = receipts.reduce((s, r) => s + (r.amount || 0), 0);
+
+  // فقط مبالغی که واقعاً به پروژه تخصیص یافته‌اند وارد تسویه بین شرکا می‌شوند.
+  // سهم وصول‌شده هر شریک از روی درصد مشارکت همان پروژه محاسبه می‌شود.
+  const receiptById = new Map((state.receipts || []).filter(r => !r.deletedAt).map(r => [r.id, r]));
+  const allocations = (state.receiptAllocations || []).filter(a => {
+    const receipt = receiptById.get(a.receiptId);
+    return receipt && (a.amount || 0) > 0;
+  });
+  const allocatedReceivedFromEmployers = allocations.reduce((sum, allocation) => {
+    const receipt = receiptById.get(allocation.receiptId);
+    return receipt.receiverPartnerId === partnerId ? sum + allocation.amount : sum;
+  }, 0);
+  const collectedShare = allocations.reduce((sum, allocation) => {
+    const partnerProjectShare = (state.projectShares || [])
+      .filter(share => share.partnerId === partnerId && share.projectId === allocation.projectId)
+      .reduce((shareSum, share) => shareSum + (share.percentage || 0), 0);
+    return sum + allocation.amount * partnerProjectShare / 100;
+  }, 0);
 
   // هزینه‌ها: طلب/بدهی بین شرکا
   const allExpenses = (state.expenses || []).filter(e => !e.deletedAt);
@@ -213,13 +231,13 @@ export function getPartnerBalance(partnerId, data = null) {
   // صفر = تسویه
   const netPosition = netClaimFromExpenses - netTransfer;
 
-  // اختلاف دریافتی واقعی با حق‌السهم پروژه‌ها؛ مستقل از بدهی/طلب هزینه‌ها
-  const shareDifference = actualReceivedFromEmployers - expectedShare;
+  // اختلاف بین وجه تخصیص‌یافته‌ای که شریک دریافت کرده و سهم او از وجوه وصول‌شده
+  // مطالبات وصول‌نشده از کارفرما در این مقایسه وارد نمی‌شوند.
+  const shareDifference = allocatedReceivedFromEmployers - collectedShare;
   const overShare = Math.max(0, shareDifference);
   const underShare = Math.max(0, -shareDifference);
 
-  // تراز نهایی یکپارچه: اختلاف سهم پروژه‌ها منهای طلب خالص هزینه‌ها و انتقال‌ها
-  // مثبت = بدهکار، منفی = طلبکار
+  // مثبت = بدهکار به شرکا؛ منفی = طلبکار از شرکا
   const overallPosition = shareDifference - netPosition;
   const difference = overallPosition;
 
@@ -232,6 +250,8 @@ export function getPartnerBalance(partnerId, data = null) {
     unknownProjectCount: unknownProjectIds.length,
     hasUnknownProjectAmounts: unknownProjectIds.length > 0,
     actualReceivedFromEmployers,
+    allocatedReceivedFromEmployers,
+    collectedShare,
     shareDifference,
     overShare,
     underShare,
