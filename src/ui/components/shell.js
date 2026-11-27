@@ -15,6 +15,8 @@ const PAGE_TITLES = {
   '/partners': 'شرکا',
   '/equipment': 'ابزارآلات',
   '/settings': 'تنظیمات',
+  '/profile': 'پروفایل کاربری',
+  '/auth': 'ورود و عضویت',
   '/backup': 'بکاپ و بازگردانی',
   '/onboarding': 'خوش‌آمدید'
 };
@@ -30,6 +32,7 @@ const NAV_ITEMS_RIGHT = [
 ];
 
 const DRAWER_ITEMS = [
+  { path: '/transactions', icon: 'arrow-left-right', label: 'تراکنش‌ها' },
   { path: '/employers', icon: 'briefcase', label: 'کارفرماها' },
   { path: '/partners', icon: 'users', label: 'شرکا' },
   { path: '/equipment', icon: 'tool', label: 'ابزارآلات' },
