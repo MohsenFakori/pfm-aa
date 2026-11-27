@@ -756,7 +756,11 @@ function silentAutoSuggest() {
   if (transactionFormState.selectedProjects.length === 0) return;
   const employerId = transactionFormState.employerId;
   const projects = (state.data.projects || []).filter(p => !p.deletedAt && p.employerId === employerId && p.status !== 'archived');
-  const projectDebts = projects.map(p => ({ id: p.id, remaining: getProjectRemaining(p.id, state.data) })).filter(p => p.remaining > 0 && transactionFormState.selectedProjects.includes(p.id));
+  const projectDebts = transactionFormState.selectedProjects
+    .map(pid => projects.find(p => p.id === pid))
+    .filter(Boolean)
+    .map(p => ({ id: p.id, remaining: getProjectRemaining(p.id, state.data) }))
+    .filter(p => p.remaining > 0);
   if (projectDebts.length === 0) return;
   const result = suggestAllocation(receiptAmount, projectDebts);
   for (const alloc of result.allocations) {
