@@ -162,6 +162,20 @@ export function renderProjectsPage() {
 function renderProjectSection(status, projects) {
   if (projects.length === 0) return '';
   const config = STATUS_CONFIG[status];
+  const cards = `<div class="space-y-2.5">${projects.map(renderProjectCard).join('')}</div>`;
+  if (status === 'archived') {
+    return `
+      <details class="mb-5 glass rounded-2xl p-3">
+        <summary class="flex items-center gap-2 cursor-pointer list-none">
+          <i data-lucide="archive" class="w-4 h-4 text-fg-muted"></i>
+          <span class="text-sm font-bold">تکمیل / بایگانی</span>
+          <span class="text-[10px] text-fg-muted bg-white/5 px-2 py-0.5 rounded-md">${toPersianDigits(projects.length)}</span>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-fg-muted mr-auto"></i>
+        </summary>
+        <div class="mt-3">${cards}</div>
+      </details>
+    `;
+  }
   return `
     <div class="mb-5">
       <div class="flex items-center gap-2 mb-2.5 px-1">
@@ -169,13 +183,10 @@ function renderProjectSection(status, projects) {
         <p class="text-sm font-bold">${config.label}</p>
         <span class="text-[10px] text-fg-muted bg-white/5 px-2 py-0.5 rounded-md">${toPersianDigits(projects.length)}</span>
       </div>
-      <div class="space-y-2.5">
-        ${projects.map(renderProjectCard).join('')}
-      </div>
+      ${cards}
     </div>
   `;
 }
-
 function renderProjectCard(project) {
   const colorHex = COLOR_HEX[project.color] || COLOR_HEX.brand;
   const received = getProjectReceived(project.id, state.data);
