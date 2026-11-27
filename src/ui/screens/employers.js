@@ -8,7 +8,7 @@ import { openSheet, closeSheet, confirmDialog } from '../components/sheet.js';
 import { Avatar, Input, Select, Textarea, EmptyState } from '../components/ui.js';
 import { formatToman, formatTomanShort, parseIntAmount } from '../../utils/number.js';
 import { formatJalali, toPersianDigits } from '../../utils/date.js';
-import { getEmployerBalance, getEmployerReceipts } from '../../domain/calculations.js';
+import { getEmployerBalance, getEmployerReceipts, getProjectRemaining } from '../../domain/calculations.js';
 import { validate, AVATAR_COLORS } from '../../domain/validators.js';
 
 const COLOR_GRADIENTS = {
@@ -205,7 +205,8 @@ function openCreditAllocationForm(employerId) {
   );
   if (employerProjects.length === 0) { showToast('پروژه‌ای برای تخصیص وجود ندارد', 'warning'); return; }
 
-  const projectOptions = employerProjects.map(p => ({ value: p.id, label: p.title }));
+  // ترتیب انتخاب پروژه‌ها حفظ می‌شود تا تخصیص از اولین انتخاب آغاز شود.
+  const selectedProjectIds = [];
 
   const content = `
     <div class="pb-2">
@@ -223,15 +224,34 @@ function openCreditAllocationForm(employerId) {
         </div>
       </div>
 
-      <div class="space-y-3">
-        ${Select({ name: 'creditProjectId', label: 'پروژه مقصد', options: projectOptions, required: true, placeholder: 'انتخاب پروژه', icon: 'briefcase' })}
-        ${Input({ name: 'creditAmount', type: 'text', label: 'مبلغ تخصیص', placeholder: String(credit), value: String(credit), required: true, suffix: 'تومان', inputmode: 'numeric' })}
-        ${Textarea({ name: 'creditNote', label: 'توضیحات (اختیاری)', placeholder: 'یادداشت اختیاری...', rows: 2 })}
+      <div class="space-y-2 mb-4">
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-bold">پروژه‌های مقصد</p>
+          <span class="text-[10px] text-fg-muted">چند پروژه را تیک بزنید</span>
+        </div>
+        <p class="text-[10px] text-fg-muted">تخصیص به ترتیب انتخاب شما انجام می‌شود؛ ابتدا بدهی پروژه اول تکمیل و باقی‌مانده به پروژه بعدی می‌رسد.</p>
+        <div class="space-y-2 max-h-52 overflow-y-auto no-scrollbar">
+          ${employerProjects.map(project => {
+            const remaining = getProjectRemaining(project.id, state.data);
+            return `
+              <label data-credit-project-card="${project.id}" class="glass rounded-xl p-3 flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" data-credit-project-id="${project.id}" onchange="window.__toggleCreditProject('${project.id}', this.checked)" class="w-4 h-4 rounded accent-brand shrink-0" />
+                <span class="flex-1 min-w-0">
+                  <span class="block text-xs font-medium truncate">${project.title}</span>
+                  <span class="block text-[10px] text-fg-muted mt-1">بدهی باقیمانده: ${formatTomanShort(remaining)}</span>
+                </span>
+                <span data-credit-project-order="${project.id}" class="text-[10px] text-brand font-bold shrink-0"></span>
+              </label>
+            `;
+          }).join('')}
+        </div>
       </div>
+
+      ${Input({ name: 'creditAmount', type: 'text', label: 'مبلغی که می‌خواهید تخصیص دهید', placeholder: String(credit), value: String(credit), required: true, suffix: 'تومان', inputmode: 'numeric' })}
 
       <button onclick="window.__saveCreditAlloc('${employerId}')"
         class="w-full h-11 rounded-xl bg-purple hover:bg-purple/90 text-white text-sm font-medium transition flex items-center justify-center gap-2 shadow-lg shadow-purple/30 mt-4">
-        <i data-lucide="check" class="w-4 h-4"></i> تخصیص به پروژه
+        <i data-lucide="check" class="w-4 h-4"></i> تخصیص به پروژه‌های انتخاب‌شده
       </button>
     </div>
   `;
@@ -246,8 +266,22 @@ function openCreditAllocationForm(employerId) {
         closeSheet();
         if (employerSheet) employerSheet.style.display = '';
       };
+      window.__toggleCreditProject = (projectId, checked) => {
+        const index = selectedProjectIds.indexOf(projectId);
+        if (checked && index === -1) selectedProjectIds.push(projectId);
+        if (!checked && index !== -1) selectedProjectIds.splice(index, 1);
+
+        employerProjects.forEach(project => {
+          const order = selectedProjectIds.indexOf(project.id);
+          const card = document.querySelector(`[data-credit-project-card="${project.id}"]`);
+          const orderLabel = document.querySelector(`[data-credit-project-order="${project.id}"]`);
+          if (card) card.classList.toggle('border', order !== -1);
+          if (card) card.classList.toggle('border-brand/40', order !== -1);
+          if (orderLabel) orderLabel.textContent = order === -1 ? '' : `اولویت ${toPersianDigits(order + 1)}`;
+        });
+      };
       window.__saveCreditAlloc = async (eid) => {
-        await saveCreditAllocation(eid, credit, employerSheet);
+        await saveCreditAllocation(eid, credit, employerSheet, [...selectedProjectIds]);
       };
     }
   });
@@ -256,66 +290,84 @@ function openCreditAllocationForm(employerId) {
 // === ذخیره تخصیص علی‌الحساب ===
 // این تخصص مازاد دریافتی را به یک پروژه اختصاص می‌دهد
 // با ایجاد یک ReceiptAllocation روی یکی از receiptهای این کارفرما که surplus دارد
-async function saveCreditAllocation(employerId, maxCredit, employerSheet) {
+async function saveCreditAllocation(employerId, maxCredit, employerSheet, selectedProjectIds) {
   const sheet = document.querySelector('.bottom-sheet:not(.date-picker-sheet)');
   if (!sheet) return;
 
-  const projectId = sheet.querySelector('[name="creditProjectId"]')?.value || '';
   const amountStr = sheet.querySelector('[name="creditAmount"]')?.value || '';
-  const note = sheet.querySelector('[name="creditNote"]')?.value?.trim() || '';
   const amount = parseIntAmount(amountStr);
 
-  if (!projectId) { showToast('پروژه را انتخاب کنید', 'error'); return; }
+  if (!selectedProjectIds || selectedProjectIds.length === 0) { showToast('حداقل یک پروژه را انتخاب کنید', 'error'); return; }
   if (!amount || amount <= 0) { showToast('مبلغ نامعتبر است', 'error'); return; }
   if (amount > maxCredit) { showToast(`مبلغ نمی‌تواند بیش از علی‌الحساب (${formatToman(maxCredit)}) باشد`, 'error'); return; }
 
+  // مبلغ به ترتیب انتخاب پروژه‌ها و تا سقف بدهی هر پروژه توزیع می‌شود.
+  let remainingToAllocate = amount;
+  const projectTargets = [];
+  for (const projectId of selectedProjectIds) {
+    const project = (state.data.projects || []).find(p =>
+      p.id === projectId && p.employerId === employerId && !p.deletedAt
+    );
+    if (!project) continue;
+    const projectRemaining = getProjectRemaining(projectId, state.data);
+    if (projectRemaining <= 0) continue;
+
+    const projectAmount = Math.min(projectRemaining, remainingToAllocate);
+    if (projectAmount > 0) {
+      projectTargets.push({ projectId, amount: projectAmount });
+      remainingToAllocate -= projectAmount;
+    }
+    if (remainingToAllocate <= 0) break;
+  }
+
+  if (remainingToAllocate > 0) {
+    showToast('مجموع بدهی پروژه‌های انتخاب‌شده برای این مبلغ کافی نیست؛ پروژه‌های بیشتری انتخاب کنید یا مبلغ را کاهش دهید.', 'warning');
+    return;
+  }
+
   try {
-    // پیدا کردن receiptهای این کارفرما که surplus دارند (مبلغ دریافتی > مجموع تخصیص‌ها)
     const employerReceipts = (state.data.receipts || []).filter(r =>
       r.employerId === employerId && !r.deletedAt
     );
 
-    let remainingToAllocate = amount;
+    // مانده علی‌الحساب هر رسید را یک‌بار محاسبه می‌کنیم و به‌ترتیب مصرف می‌کنیم.
+    const receiptPool = employerReceipts.map(receipt => {
+      const allocated = (state.data.receiptAllocations || [])
+        .filter(a => a.receiptId === receipt.id)
+        .reduce((sum, allocation) => sum + (allocation.amount || 0), 0);
+      return { receiptId: receipt.id, remaining: Math.max(0, receipt.amount - allocated) };
+    }).filter(item => item.remaining > 0);
+
     const allocationsToCreate = [];
-
-    for (const receipt of employerReceipts) {
-      if (remainingToAllocate <= 0) break;
-
-      const existingAllocations = (state.data.receiptAllocations || []).filter(a => {
-        if (a.receiptId !== receipt.id) return false;
-        const r = (state.data.receipts || []).find(rr => rr.id === a.receiptId);
-        return r && !r.deletedAt;
-      });
-      const allocated = existingAllocations.reduce((s, a) => s + (a.amount || 0), 0);
-      const surplus = receipt.amount - allocated;
-
-      if (surplus > 0) {
-        const allocAmount = Math.min(surplus, remainingToAllocate);
-        allocationsToCreate.push({ receiptId: receipt.id, projectId, amount: allocAmount });
-        remainingToAllocate -= allocAmount;
+    for (const target of projectTargets) {
+      let projectAmountLeft = target.amount;
+      for (const receipt of receiptPool) {
+        if (projectAmountLeft <= 0) break;
+        if (receipt.remaining <= 0) continue;
+        const allocationAmount = Math.min(projectAmountLeft, receipt.remaining);
+        allocationsToCreate.push({
+          receiptId: receipt.receiptId,
+          projectId: target.projectId,
+          amount: allocationAmount
+        });
+        receipt.remaining -= allocationAmount;
+        projectAmountLeft -= allocationAmount;
+      }
+      if (projectAmountLeft > 0) {
+        showToast('خطا: علی‌الحساب کافی برای تخصیص یافت نشد', 'error');
+        return;
       }
     }
 
-    if (remainingToAllocate > 0) {
-      showToast('خطا: علی‌الحساب کافی یافت نشد', 'error');
-      return;
-    }
-
-    // ایجاد تخصیص‌ها
-    for (const alloc of allocationsToCreate) {
-      const created = await repo.receiptAllocations.create({
-        receiptId: alloc.receiptId,
-        projectId: alloc.projectId,
-        amount: alloc.amount
-      });
+    for (const allocation of allocationsToCreate) {
+      const created = await repo.receiptAllocations.create(allocation);
       state.updateEntity('receiptAllocations', created);
     }
 
-    showToast(`${formatToman(amount)} به پروژه تخصیص یافت`, 'success');
+    showToast(`${formatToman(amount)} به ${toPersianDigits(projectTargets.length)} پروژه تخصیص یافت`, 'success');
     closeSheet();
     if (employerSheet) employerSheet.style.display = '';
 
-    // فرم کارفرما را دوباره باز کن تا به‌روز شده نمایش داده شود
     openEmployerForm(employerId);
   } catch (e) {
     console.error('Credit allocation failed:', e);
