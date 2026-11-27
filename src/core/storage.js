@@ -13,6 +13,7 @@ const KEYS = {
 const DEFAULT_SETTINGS = {
   userName: '',
   avatarColor: 'brand',
+  avatarIcon: '',
   unit: 'toman',
   calendar: 'jalali',
   theme: 'dark',
