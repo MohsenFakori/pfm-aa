@@ -46,10 +46,8 @@ export function renderDashboardPage() {
 
   main.innerHTML = `
     <div class="px-4 pt-4 pb-28 space-y-5">
-      ${renderGreetingHeader(firstLetter, greeting, userName, settings.avatarColor)}
-      ${renderTodaySummary()}
+      ${renderGreetingHeader(firstLetter, greeting, userName, settings.avatarColor, settings.avatarIcon || '')}
       ${renderBalanceCard(summary, progressPercent)}
-      ${renderQuickStats(summary)}
       ${summary.partnerDebtTotal > 0 ? renderPartnerDebtSummary(summary) : ''}
       ${renderQuickActions()}
       ${activeProjects.length > 0 ? renderActiveProjects(activeProjects) : ''}
@@ -77,7 +75,7 @@ function renderWelcomeState() {
   `;
 }
 
-function renderGreetingHeader(firstLetter, greeting, userName, avatarColor) {
+function renderGreetingHeader(firstLetter, greeting, userName, avatarColor, avatarIcon = '') {
   const todayIso = today();
   const weekday = getWeekday(todayIso);
   const dateStr = formatJalali(todayIso);
@@ -189,7 +187,7 @@ function renderTodaySummary() {
 }
 
 // === یادآوری‌ها ===
-function getReminderItems() {
+export function getReminderItems() {
   const items = [];
   const completedProjects = (state.data.projects || []).filter(p => !p.deletedAt && p.status === 'completed');
   for (const p of completedProjects) {
@@ -206,7 +204,7 @@ function getReminderItems() {
   return items;
 }
 
-function openDashboardReminders() {
+export function openDashboardReminders() {
   const items = getReminderItems();
   if (!items.length) return;
   const colorMap = { cta: 'bg-cta/15 text-cta', danger: 'bg-danger-soft text-danger', warning: 'bg-warning-soft text-warning' };
