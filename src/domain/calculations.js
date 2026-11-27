@@ -181,7 +181,8 @@ export function getPartnerBalance(partnerId, data = null) {
   const receiptById = new Map((state.receipts || []).filter(r => !r.deletedAt).map(r => [r.id, r]));
   const allocations = (state.receiptAllocations || []).filter(a => {
     const receipt = receiptById.get(a.receiptId);
-    return receipt && (a.amount || 0) > 0;
+    // اگر دریافت‌کننده مشخص نیست، نمی‌توان مبلغ را به حساب هیچ شریکی منظور کرد.
+    return receipt && receipt.receiverPartnerId && (a.amount || 0) > 0;
   });
   const allocatedReceivedFromEmployers = allocations.reduce((sum, allocation) => {
     const receipt = receiptById.get(allocation.receiptId);
