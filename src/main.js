@@ -27,6 +27,8 @@ import { renderPartnersPage } from './ui/screens/partners.js';
 import { renderTransactionsPage, renderAddTransactionPage } from './ui/screens/transactions.js';
 import { renderAddExpensePage, renderAddTransferPage } from './ui/screens/expenses.js';
 import { renderOnboardingPage } from './ui/screens/onboarding.js';
+import { renderProfilePage } from './ui/screens/profile.js';
+import { renderAuthPage } from './ui/screens/auth.js';
 
 // Less-used screens are loaded lazily via dynamic import (code-splitting)
 // - reports.js
@@ -75,6 +77,8 @@ async function init() {
     registerRoute('/transfer/add', renderAddTransferPage);
     registerRoute('/backup', renderBackupPageLazy);
     registerRoute('/settings', renderSettingsPageLazy);
+    registerRoute('/profile', renderProfilePage);
+    registerRoute('/auth', renderAuthPage);
     registerRoute('/onboarding', renderOnboardingPage);
 
     // 3. Wrap each route to render shell first then page
@@ -147,6 +151,8 @@ function routesIterator() {
     ['/transfer/add', renderAddTransferPage],
     ['/backup', renderBackupPageLazy],
     ['/settings', renderSettingsPageLazy],
+    ['/profile', renderProfilePage],
+    ['/auth', renderAuthPage],
     ['/onboarding', renderOnboardingPage]
   ];
 }
