@@ -25,8 +25,7 @@ const COLOR_HEX = {
 };
 const STATUS_CONFIG = {
   active: { color: 'warning', label: 'فعال', icon: 'circle' },
-  completed: { color: 'success', label: 'تکمیل‌شده', icon: 'check-circle' },
-  archived: { color: 'fg-muted', label: 'بایگانی‌شده', icon: 'archive' }
+  archived: { color: 'fg-muted', label: 'تکمیل / بایگانی', icon: 'archive' }
 };
 
 let searchTerm = '';
@@ -126,14 +125,13 @@ export function renderProjectsPage() {
 
   const filtered = sortProjects(getFiltered());
   const active = filtered.filter(p => p.status === 'active');
-  const completed = filtered.filter(p => p.status === 'completed');
-  const archived = filtered.filter(p => p.status === 'archived');
+  const archived = filtered.filter(p => p.status === 'archived' || p.status === 'completed');
 
   main.innerHTML = `
     <div class="px-4 pt-4 pb-32">
       ${renderSearch('project-search', 'جستجوی پروژه...')}
       <div class="mt-4" id="projects-list">
-        ${renderProjectSection('active', active) + renderProjectSection('completed', completed) + renderProjectSection('archived', archived)}
+        ${renderProjectSection('active', active) + renderProjectSection('archived', archived)}
       </div>
     </div>
     ${renderFab()}
@@ -150,9 +148,8 @@ export function renderProjectsPage() {
       if (listEl) {
         const reFiltered = sortProjects(getFiltered());
         const rActive = reFiltered.filter(p => p.status === 'active');
-        const rCompleted = reFiltered.filter(p => p.status === 'completed');
-        const rArchived = reFiltered.filter(p => p.status === 'archived');
-        listEl.innerHTML = renderProjectSection('active', rActive) + renderProjectSection('completed', rCompleted) + renderProjectSection('archived', rArchived);
+        const rArchived = reFiltered.filter(p => p.status === 'archived' || p.status === 'completed');
+        listEl.innerHTML = renderProjectSection('active', rActive) + renderProjectSection('archived', rArchived);
         if (window.lucide) window.lucide.createIcons();
       }
     });
@@ -184,8 +181,8 @@ function renderProjectCard(project) {
   const received = getProjectReceived(project.id, state.data);
   const remaining = getProjectRemaining(project.id, state.data);
   const percent = getProjectProgressPercent(project.id, state.data);
-  const statusConfig = STATUS_CONFIG[project.status];
-  const statusVariant = { active: 'warning', completed: 'success', archived: 'default' }[project.status];
+  const statusConfig = STATUS_CONFIG[project.status] || STATUS_CONFIG.archived;
+  const statusVariant = { active: 'warning', completed: 'default', archived: 'default' }[project.status];
   const deadline = project.endDate || project.startDate;
   const employer = (state.data.employers || []).find(e => e.id === project.employerId && !e.deletedAt);
 
@@ -1261,8 +1258,7 @@ function renderStatusSelector(project, remaining) {
   const canChangeToCompleted = !project.amountUndetermined && remaining === 0;
   const statusOptions = [
     { value: 'active', label: 'فعال', alwaysEnabled: true },
-    { value: 'completed', label: 'تکمیل‌شده', alwaysEnabled: false },
-    { value: 'archived', label: 'بایگانی‌شده', alwaysEnabled: false }
+    { value: 'archived', label: 'تکمیل / بایگانی', alwaysEnabled: false }
   ];
 
   return `
@@ -1305,7 +1301,7 @@ async function changeProjectStatus(projectId, newStatus) {
   if (!project) return;
 
   // بررسی تسویه برای completed و archived
-  if (newStatus === 'completed' || newStatus === 'archived') {
+  if (newStatus === 'archived') {
     const remaining = getProjectRemaining(projectId, state.data);
     if (remaining > 0) {
       showToast('پروژه باید ابتدا کاملاً تسویه شود', 'error');
