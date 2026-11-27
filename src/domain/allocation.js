@@ -3,56 +3,22 @@
 
 import { getProjectRemaining } from './calculations.js';
 
-// پیشنهاد تخصیص به نسبت بدهی باقیمانده
+// پیشنهاد تخصیص ترتیبی بر اساس ترتیب انتخاب پروژه‌ها
 export function suggestAllocation(receiptAmount, projectDebts, options = {}) {
-  const { includeCredits = false, employerCredit = 0 } = options;
-
-  // فیلتر پروژه‌هایی که بدهی دارند (یا اعتبار قابل استفاده)
   const eligible = projectDebts.filter(p => p.remaining > 0);
-  const totalDebt = eligible.reduce((s, p) => s + p.remaining, 0);
+  let remainingAmount = Math.max(0, Number(receiptAmount) || 0);
+  const allocations = [];
 
-  // اگر هیچ بدهی‌ای وجود ندارد، همه به علی‌الحساب
-  if (totalDebt === 0) {
-    return {
-      allocations: [],
-      surplus: receiptAmount,
-      surplusReason: 'no_debt'
-    };
-  }
-
-  // اگر مبلغ دریافتی بزرگ‌تر مساوی کل بدهی + اعتبار قبلی
-  const availableForAllocation = receiptAmount;
-  if (availableForAllocation >= totalDebt) {
-    // همه پروژه‌ها کامل تسویه، مازاد → علی‌الحساب
-    return {
-      allocations: eligible.map(p => ({
-        projectId: p.id,
-        amount: p.remaining,
-        maxAmount: p.remaining
-      })),
-      surplus: availableForAllocation - totalDebt,
-      surplusReason: availableForAllocation > totalDebt ? 'overpaid' : 'exact'
-    };
-  }
-
-  // تخصیص به نسبت بدهی
-  const allocations = eligible.map(p => ({
-    projectId: p.id,
-    amount: Math.floor((p.remaining / totalDebt) * availableForAllocation),
-    maxAmount: p.remaining
-  }));
-
-  // اصلاح خطای گرد کردن: تفاضل به اولین پروژه اضافه شود
-  const allocated = allocations.reduce((s, a) => s + a.amount, 0);
-  const diff = availableForAllocation - allocated;
-  if (diff !== 0 && allocations.length > 0) {
-    allocations[0].amount += diff;
+  for (const project of eligible) {
+    const amount = Math.min(project.remaining, remainingAmount);
+    allocations.push({ projectId: project.id, amount, maxAmount: project.remaining });
+    remainingAmount -= amount;
   }
 
   return {
     allocations,
-    surplus: 0,
-    surplusReason: 'allocated'
+    surplus: remainingAmount,
+    surplusReason: eligible.length === 0 ? 'no_debt' : remainingAmount > 0 ? 'overpaid' : 'allocated'
   };
 }
 
