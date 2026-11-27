@@ -1264,7 +1264,7 @@ async function togglePin(id) {
 }
 
 // === انتخابگر وضعیت پروژه ===
-// فقط در صورت تسویه کامل اجازه completed/archived می‌دهد
+// تکمیل و بایگانی در یک وضعیت مشترک مدیریت می‌شوند
 function renderStatusSelector(project, remaining) {
   const canChangeToCompleted = !project.amountUndetermined && remaining === 0;
   const statusOptions = [
@@ -1311,7 +1311,7 @@ async function changeProjectStatus(projectId, newStatus) {
   const project = (state.data.projects || []).find(p => p.id === projectId);
   if (!project) return;
 
-  // بررسی تسویه برای completed و archived
+  // پیش از تکمیل/بایگانی، تسویه پروژه بررسی می‌شود
   if (newStatus === 'archived') {
     const remaining = getProjectRemaining(projectId, state.data);
     if (remaining > 0) {
@@ -1323,7 +1323,7 @@ async function changeProjectStatus(projectId, newStatus) {
   try {
     const updated = await repo.projects.update(projectId, { status: newStatus });
     state.updateEntity('projects', updated);
-    const statusLabel = PROJECT_STATUS_LABELS[newStatus] || newStatus;
+    const statusLabel = newStatus === 'archived' ? 'تکمیل / بایگانی' : (PROJECT_STATUS_LABELS[newStatus] || newStatus);
     showToast(`وضعیت پروژه به «${statusLabel}» تغییر یافت`, 'success');
     renderProjectDetailPage(currentDetailParams);
   } catch (e) {
