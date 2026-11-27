@@ -57,7 +57,7 @@ export function renderProfilePage() {
         </div>
         <p class="text-xs text-fg-muted mb-2">آیکن پروفایل</p>
         <div class="grid grid-cols-5 gap-2">
-          ${AVATAR_ICONS.map(item => '<button type="button" onclick="window.__profileIcon(\'' + item.value + '\')" class="aspect-square rounded-xl glass flex flex-col items-center justify-center gap-1 ' + (selectedIcon === item.value ? 'border border-brand text-brand bg-brand/10' : 'text-fg-muted') + '" aria-label="' + item.label + '">' + (item.value ? '<i data-lucide="' + item.icon + '" class="w-5 h-5"></i>' : '<span class="text-[9px]">بدون</span>') + '</button>').join('')}
+          ${AVATAR_ICONS.map(item => '<button type="button" onclick="window.__profileIcon(\'' + item.value + '\')" data-avatar-icon="' + item.value + '" class="aspect-square rounded-xl glass flex flex-col items-center justify-center gap-1 ' + (selectedIcon === item.value ? 'border border-brand text-brand bg-brand/10' : 'text-fg-muted') + '" aria-label="' + item.label + '">' + (item.value ? '<i data-lucide="' + item.icon + '" class="w-5 h-5"></i>' : '<span class="text-[9px]">بدون</span>') + '</button>').join('')}
         </div>
         <button onclick="window.__saveUserProfile()" class="w-full h-11 rounded-xl bg-brand text-white text-sm font-medium mt-5">ذخیره تغییرات</button>
       </section>
