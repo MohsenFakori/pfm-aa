@@ -188,10 +188,12 @@ export function getPartnerBalance(partnerId, data = null) {
     return receipt.receiverPartnerId === partnerId ? sum + allocation.amount : sum;
   }, 0);
   const collectedShare = allocations.reduce((sum, allocation) => {
+    const project = (state.projects || []).find(p => p.id === allocation.projectId && !p.deletedAt);
+    if (!project) return sum;
     const partnerProjectShare = (state.projectShares || [])
       .filter(share => share.partnerId === partnerId && share.projectId === allocation.projectId)
       .reduce((shareSum, share) => shareSum + (share.percentage || 0), 0);
-    return sum + allocation.amount * partnerProjectShare / 100;
+    return sum + Math.round(allocation.amount * partnerProjectShare / 100);
   }, 0);
 
   // هزینه‌ها: طلب/بدهی بین شرکا
