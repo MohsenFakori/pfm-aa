@@ -5,6 +5,7 @@ import { state } from '../../core/state.js';
 import { navigate } from '../../core/router.js';
 import { showToast } from '../components/toast.js';
 import { AVATAR_COLORS } from '../../domain/validators.js';
+import { authService } from '../../core/auth.js';
 
 const COLOR_GRADIENTS = {
   brand: 'from-brand to-brand-dark',
@@ -35,6 +36,7 @@ let selectedIcon = '';
 
 export function renderProfilePage() {
   const settings = state.data.settings || {};
+  const authReady = authService.isConfigured();
   const name = settings.userName || '';
   selectedColor = settings.avatarColor || 'brand';
   selectedIcon = settings.avatarIcon || '';
@@ -64,8 +66,11 @@ export function renderProfilePage() {
 
       <section class="glass rounded-2xl p-4">
         <div class="flex items-center gap-2 mb-2"><i data-lucide="lock-keyhole" class="w-4 h-4 text-fg-muted"></i><h3 class="text-sm font-bold">رمز عبور</h3></div>
-        <p class="text-xs text-fg-muted leading-6">تغییر رمز عبور پس از اتصال بک‌اند و راه‌اندازی احراز هویت فعال می‌شود. برای حفظ امنیت، رمز عبور در نسخه فعلی روی دستگاه ذخیره نمی‌شود.</p>
-        <button disabled class="w-full h-10 rounded-xl glass text-xs text-fg-subtle mt-3 opacity-60">تغییر رمز عبور در نسخه بعدی فعال می‌شود</button>
+        <p class="text-xs text-fg-muted leading-6 mb-3">${authReady ? "برای تغییر رمز، رمز فعلی و رمز جدید را وارد کنید." : "تغییر رمز عبور پس از اتصال بک‌اند فعال می‌شود. رمز عبور در نسخه فعلی روی دستگاه ذخیره نمی‌شود."}</p>
+        <input id="current-password" type="password" autocomplete="current-password" placeholder="رمز عبور فعلی" ${authReady ? "" : "disabled"} class="w-full h-10 px-3 rounded-xl bg-ink-soft border border-line text-xs mb-2" />
+        <input id="new-password" type="password" autocomplete="new-password" placeholder="رمز عبور جدید" ${authReady ? "" : "disabled"} class="w-full h-10 px-3 rounded-xl bg-ink-soft border border-line text-xs mb-2" />
+        <input id="confirm-password" type="password" autocomplete="new-password" placeholder="تکرار رمز عبور جدید" ${authReady ? "" : "disabled"} class="w-full h-10 px-3 rounded-xl bg-ink-soft border border-line text-xs mb-2" />
+        <button onclick="window.__changeProfilePassword()" ${authReady ? "" : "disabled"} class="w-full h-10 rounded-xl glass text-xs mt-1 ${authReady ? "text-brand" : "text-fg-subtle opacity-60"}">تغییر رمز عبور</button>
       </section>
 
       <section class="glass rounded-2xl p-4">
@@ -78,10 +83,28 @@ export function renderProfilePage() {
   window.__profileColor = color => { selectedColor = color; updateProfileChoices(); };
   window.__profileIcon = value => { selectedIcon = value; updateProfileChoices(); };
   window.__saveUserProfile = saveUserProfile;
+  window.__changeProfilePassword = changeProfilePassword;
   window.__navigate = path => navigate(path);
   if (window.lucide) window.lucide.createIcons();
 }
 
+async function changeProfilePassword() {
+  if (!authService.isConfigured()) { showToast("سرویس احراز هویت هنوز متصل نشده است", "warning"); return; }
+  const currentPassword = document.getElementById("current-password")?.value || "";
+  const newPassword = document.getElementById("new-password")?.value || "";
+  const confirmPassword = document.getElementById("confirm-password")?.value || "";
+  if (!currentPassword || !newPassword) { showToast("رمز فعلی و رمز جدید را وارد کنید", "error"); return; }
+  if (newPassword.length < 8) { showToast("رمز جدید باید حداقل ۸ کاراکتر باشد", "error"); return; }
+  if (newPassword !== confirmPassword) { showToast("تکرار رمز جدید با آن مطابقت ندارد", "error"); return; }
+  try {
+    await authService.changePassword({ currentPassword, newPassword });
+    showToast("رمز عبور تغییر کرد", "success");
+    renderProfilePage();
+  } catch (error) {
+    console.error("Password change failed:", error);
+    showToast(error.message || "خطا در تغییر رمز عبور", "error");
+  }
+}
 function updateProfileChoices() {
   document.querySelectorAll('[data-avatar-color]').forEach(button => {
     const selected = button.dataset.avatarColor === selectedColor;
