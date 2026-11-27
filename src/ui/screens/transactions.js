@@ -745,8 +745,8 @@ function toggleProject(pid) {
   } else {
     transactionFormState.selectedProjects.push(pid);
     transactionFormState.allocations[pid] = '';
-    silentAutoSuggest();
   }
+  silentAutoSuggest();
   renderAddTransactionPage(false);
 }
 
