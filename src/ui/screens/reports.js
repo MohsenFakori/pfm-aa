@@ -309,9 +309,9 @@ function renderPartnerBalances() {
   const totalReceived = balances.reduce((s, b) => s + b.actualReceivedFromEmployers, 0);
   const totalOverShare = balances.reduce((s, b) => s + b.overShare, 0);
   const totalUnderShare = balances.reduce((s, b) => s + b.underShare, 0);
-  const totalCreditorClaims = balances.reduce((s, b) => s + Math.max(0, b.netPosition), 0);
-  const totalDebtorObligations = balances.reduce((s, b) => s + Math.max(0, -b.netPosition), 0);
-  const sorted = [...balances].sort((a, b) => b.netPosition - a.netPosition);
+  const totalCreditorClaims = balances.reduce((s, b) => s + Math.max(0, -b.overallPosition), 0);
+  const totalDebtorObligations = balances.reduce((s, b) => s + Math.max(0, b.overallPosition), 0);
+  const sorted = [...balances].sort((a, b) => b.overallPosition - a.overallPosition);
   const unknownProjects = (state.data.projects || []).filter(p =>
     !p.deletedAt && (p.amountUndetermined === true || p.amount == null)
   );
@@ -343,7 +343,7 @@ function renderPartnerBalances() {
           <div><p class="text-[10px] text-fg-muted mb-1">مجموع طلب شرکا</p><p class="text-sm font-bold text-success tabular-nums">${formatTomanShort(totalCreditorClaims)}</p></div>
           <div><p class="text-[10px] text-fg-muted mb-1">مجموع بدهی شرکا</p><p class="text-sm font-bold text-danger tabular-nums">${formatTomanShort(totalDebtorObligations)}</p></div>
         </div>
-        <p class="text-[9px] text-fg-muted mt-2">این تراز بر اساس هزینه‌های ثبت‌شده و انتقال‌های بین شرکا محاسبه می‌شود و از مقایسه حق‌السهم مستقل است.</p>
+        <p class="text-[9px] text-fg-muted mt-2">این ارقام تراز نهایی را با ترکیب حق‌السهم، دریافتی‌ها، هزینه‌ها و انتقال‌های بین شرکا نشان می‌دهند.</p>
       </div>
       <div class="space-y-2.5">${sorted.map(renderPartnerBalanceRow).join('')}</div>
     </div>
@@ -361,8 +361,8 @@ function renderPartnerBalanceRow(b) {
 
   const shareLabel = b.shareDifference > 0 ? 'بیشتر از سهم' : b.shareDifference < 0 ? 'کمتر از سهم' : 'مطابق سهم';
   const shareColor = b.shareDifference > 0 ? 'text-danger' : b.shareDifference < 0 ? 'text-warning' : 'text-success';
-  const positionLabel = b.hasUnknownProjectAmounts ? 'تراز هزینه‌ها و انتقال‌ها' : b.netPosition > 0 ? 'طلب از شرکا' : b.netPosition < 0 ? 'بدهی به شرکا' : 'تسویه بین شرکا';
-  const positionColor = b.netPosition > 0 ? 'text-success' : b.netPosition < 0 ? 'text-danger' : 'text-fg-muted';
+  const positionLabel = b.overallPosition > 0 ? 'بدهکار به شرکا' : b.overallPosition < 0 ? 'طلبکار از شرکا' : 'تراز نهایی: تسویه';
+  const positionColor = b.overallPosition > 0 ? 'text-danger' : b.overallPosition < 0 ? 'text-success' : 'text-fg-muted';
 
   return `
     <div class="glass rounded-2xl p-3.5">
@@ -386,12 +386,12 @@ function renderPartnerBalanceRow(b) {
         </div>
         <div class="rounded-lg bg-white/5 py-2">
           <p class="text-[9px] text-fg-muted">خالص هزینه‌ها و انتقال‌ها</p>
-          <p class="text-xs font-bold tabular-nums ${positionColor}">${formatTomanShort(Math.abs(b.netPosition))}</p>
+          <p class="text-xs font-bold tabular-nums">${formatTomanShort(Math.abs(b.netPosition))}</p>
         </div>
       </div>
       <div class="border-t border-white/5 pt-2 mt-2 flex items-center justify-between">
         <span class="text-[10px] ${positionColor}">${positionLabel}</span>
-        <span class="text-xs font-bold tabular-nums ${positionColor}">${formatToman(Math.abs(b.netPosition))}</span>
+        <span class="text-xs font-bold tabular-nums ${positionColor}">${formatToman(Math.abs(b.overallPosition))}</span>
       </div>
       ${b.hasUnknownProjectAmounts ? `<p class="text-[10px] text-warning mt-2">حق‌السهم این شریک به دلیل وجود پروژه با مبلغ نامشخص، قطعی نیست.</p>` : ''}
     </div>
