@@ -83,7 +83,7 @@ function renderGreetingHeader(firstLetter, greeting, userName, avatarColor, avat
   return `
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2.5">
-        ${Avatar({ text: firstLetter, color: avatarColor || 'brand', size: 'md' })}
+        ${Avatar({ text: avatarIcon ? '<i data-lucide="' + avatarIcon + '" class="w-5 h-5"></i>' : firstLetter, color: avatarColor || 'brand', size: 'md' })}
         <div>
           <p class="text-[11px] text-fg-muted">${greeting}</p>
           <p class="text-sm font-bold">${userName}</p>
@@ -93,10 +93,7 @@ function renderGreetingHeader(firstLetter, greeting, userName, avatarColor, avat
           </p>
         </div>
       </div>
-      <button onclick="window.__openDashboardReminders()" ${reminderCount === 0 ? 'disabled' : ''} class="w-10 h-10 rounded-xl glass flex items-center justify-center relative ${reminderCount > 0 ? 'text-cta hover:bg-white/10' : 'text-fg-muted opacity-50 cursor-not-allowed'}" aria-label="یادآوری‌ها" aria-haspopup="dialog" aria-disabled="${reminderCount === 0}">
-        <i data-lucide="bell" class="w-5 h-5"></i>
-        ${reminderCount > 0 ? `<span class="absolute -top-1 -left-1 min-w-[18px] h-[18px] px-1 rounded-full bg-danger text-white text-[9px] font-bold flex items-center justify-center leading-none">${toPersianDigits(reminderCount)}</span>` : ''}
-      </button>
+
     </div>
   `;
 }
