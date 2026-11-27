@@ -53,7 +53,7 @@ export function renderProfilePage() {
         <input id="profile-name" type="text" value="${escapeAttribute(name)}" maxlength="60" placeholder="نام شما" class="w-full h-11 px-3 rounded-xl bg-ink-soft border border-line focus:border-brand outline-none text-sm mb-4" />
         <p class="text-xs text-fg-muted mb-2">رنگ آواتار</p>
         <div class="flex flex-wrap gap-2 mb-5">
-          ${AVATAR_COLORS.map(color => '<button type="button" onclick="window.__profileColor(\'' + color + '\')" aria-label="رنگ ' + color + '" class="w-9 h-9 rounded-full bg-gradient-to-br ' + COLOR_GRADIENTS[color] + ' ' + (selectedColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-ink-soft' : '') + '"></button>').join('')}
+          ${AVATAR_COLORS.map(color => '<button type="button" onclick="window.__profileColor(\'' + color + '\')" data-avatar-color="' + color + '" aria-label="رنگ ' + color + '" class="w-9 h-9 rounded-full bg-gradient-to-br ' + COLOR_GRADIENTS[color] + ' ' + (selectedColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-ink-soft' : '') + '"></button>').join('')}
         </div>
         <p class="text-xs text-fg-muted mb-2">آیکن پروفایل</p>
         <div class="grid grid-cols-5 gap-2">
