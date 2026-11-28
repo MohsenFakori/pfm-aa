@@ -12,6 +12,7 @@ import { confirmDialog } from '../components/sheet.js';
 import { Avatar, Input } from '../components/ui.js';
 import { AVATAR_COLORS } from '../../domain/validators.js';
 import { formatJalaliWithTime, toPersianDigits } from '../../utils/date.js';
+import { runIntegrityChecks } from '../../domain/integrity.js';
 
 const COLOR_GRADIENTS = {
   brand: 'from-brand to-brand-dark', cta: 'from-cta to-cta-dark',
@@ -46,6 +47,7 @@ export function renderBackupPage() {
     <div class="px-4 pt-4 pb-28 space-y-4">
       ${renderExportCard()}
       ${renderImportCard()}
+      ${renderIntegrityCard()}
       ${renderAutoBackupCard(settings)}
       ${renderDangerZone()}
     </div>
@@ -53,6 +55,7 @@ export function renderBackupPage() {
   if (window.lucide) window.lucide.createIcons();
   window.__exportJSON = exportJSON;
   window.__importJSON = importJSON;
+  window.__runIntegrityChecks = runIntegrityChecksFromUI;
   window.__toggleAutoBackup = toggleAutoBackup;
   window.__clearAllData = clearAllData;
   window.__navigate = (path) => navigate(path);
@@ -90,6 +93,65 @@ function renderImportCard() {
       </label>
     </div>
   `;
+}
+
+function renderIntegrityCard() {
+  return `
+    <div class="glass rounded-2xl p-4">
+      <div class="flex items-start gap-3 mb-3">
+        <div class="w-11 h-11 rounded-xl bg-info-soft text-info flex items-center justify-center shrink-0"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
+        <div class="flex-1">
+          <h3 class="text-sm font-bold mb-1">بررسی سلامت اطلاعات</h3>
+          <p class="text-xs text-fg-muted">شناسایی ارجاع‌های ناقص و مغایرت‌های مالی؛ بدون تغییر در اطلاعات</p>
+        </div>
+      </div>
+      <button onclick="window.__runIntegrityChecks()" class="w-full h-11 rounded-xl glass-strong text-sm font-medium hover:bg-white/10 transition flex items-center justify-center gap-2">
+        <i data-lucide="scan-search" class="w-4 h-4"></i> اجرای بررسی
+      </button>
+      <div id="integrity-results" class="mt-3 space-y-2" aria-live="polite"></div>
+    </div>
+  `;
+}
+
+function runIntegrityChecksFromUI() {
+  const container = document.getElementById('integrity-results');
+  if (!container) return;
+
+  const result = runIntegrityChecks(state.data);
+  container.replaceChildren();
+
+  const summary = document.createElement('p');
+  summary.className = 'text-xs font-semibold';
+  summary.textContent = `بررسی ${toPersianDigits(result.checkedRecords)} رکورد: ${toPersianDigits(result.summary.errors)} خطا و ${toPersianDigits(result.summary.warnings)} هشدار`;
+  container.appendChild(summary);
+
+  if (!result.findings.length) {
+    const clean = document.createElement('p');
+    clean.className = 'rounded-xl bg-success-soft text-success p-3 text-xs';
+    clean.textContent = 'مغایرتی در موارد بررسی‌شده پیدا نشد.';
+    container.appendChild(clean);
+    return;
+  }
+
+  for (const finding of result.findings) {
+    const item = document.createElement('div');
+    item.className = finding.severity === 'error'
+      ? 'rounded-xl bg-danger-soft p-3'
+      : 'rounded-xl bg-warning-soft p-3';
+
+    const title = document.createElement('p');
+    title.className = finding.severity === 'error'
+      ? 'text-xs font-bold text-danger'
+      : 'text-xs font-bold text-warning';
+    title.textContent = finding.title;
+
+    const detail = document.createElement('p');
+    detail.className = 'text-[11px] text-fg-muted mt-1';
+    detail.textContent = finding.detail;
+
+    item.append(title, detail);
+    container.appendChild(item);
+  }
 }
 
 function renderAutoBackupCard(settings) {
