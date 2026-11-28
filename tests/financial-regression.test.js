@@ -20,7 +20,7 @@ function validData() {
     receipts: [{ id: 'r1', employerId: 'e1', receiverPartnerId: 'p1', amount: 600, date: '2026-11-10' }],
     receiptAllocations: [{ id: 'a1', receiptId: 'r1', projectId: 'pr1', amount: 600 }],
     expenses: [{
-      id: 'x1', projectId: 'pr1', paidByPartnerId: 'p1', amount: 200,
+      id: 'x1', projectId: 'pr1', paidByPartnerId: 'p1', amount: 200, date: '2026-11-12',
       shareDistribution: [{ partnerId: 'p1', amount: 120 }, { partnerId: 'p2', amount: 80 }]
     }],
     partnerTransfers: [{ id: 't1', fromPartnerId: 'p1', toPartnerId: 'p2', amount: 50, date: '2026-11-11' }],
