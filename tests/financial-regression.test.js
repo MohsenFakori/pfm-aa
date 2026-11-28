@@ -58,13 +58,18 @@ test('integrity check reports no issues for a consistent data set', () => {
   assert.deepEqual(result.summary, { errors: 0, warnings: 0, total: 0 });
 });
 
-test('integrity check detects over-allocation and a completed project balance', () => {
+test('integrity check detects receipt over-allocation', () => {
   const data = validData();
-  data.projects[0].status = 'completed';
   data.receiptAllocations[0].amount = 1200;
   const result = runIntegrityChecks(data);
   assert.ok(result.findings.some(item => item.code === 'receipt-overallocated'));
-  assert.ok(!result.findings.some(item => item.code === 'completed-project-balance'));
+});
+
+test('integrity check detects a completed project with an outstanding balance', () => {
+  const data = validData();
+  data.projects[0].status = 'completed';
+  const result = runIntegrityChecks(data);
+  assert.ok(result.findings.some(item => item.code === 'completed-project-balance'));
 });
 
 test('integrity check detects missing references and inconsistent shares', () => {
