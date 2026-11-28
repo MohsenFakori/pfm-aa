@@ -11,7 +11,9 @@ import {
   FolderPlus, GripVertical, Home, Inbox, Info, LayoutGrid, Menu, Pencil,
   Phone, Plus, RefreshCw, Search, SearchX, Sliders, Sparkles, Tag, Wrench, Trash2,
   TrendingDown, TrendingUp, Upload, User, UserPlus, Users, Wallet, X,
-  Database, ChartPie, Receipt, Mail, Settings, ArrowRightLeft
+  Database, ChartPie, Receipt, Mail, Settings, ArrowRightLeft,
+  UserRound, BriefcaseBusiness, Rocket, Star, Leaf, Coffee, Code, Heart,
+  LockKeyhole, ShieldCheck
 } from 'lucide';
 
 // کلیدها به صورت PascalCase (طبق نیاز lucide replaceElement)
@@ -72,7 +74,17 @@ const icons = {
   X,
   Database,
   ChartPie,
-  Receipt
+  Receipt,
+  UserRound,
+  BriefcaseBusiness,
+  Rocket,
+  Star,
+  Leaf,
+  Coffee,
+  Code,
+  Heart,
+  LockKeyhole,
+  ShieldCheck
 };
 
 let initialized = false;
