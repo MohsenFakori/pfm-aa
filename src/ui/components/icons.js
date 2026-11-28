@@ -87,8 +87,6 @@ const icons = {
   ShieldCheck
 };
 
-let initialized = false;
-
 export function refreshIcons() {
   if (typeof window !== 'undefined') {
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -106,7 +104,6 @@ export function initIcons() {
     } else {
       createIcons({ icons });
     }
-    initialized = true;
   }
 }
 
