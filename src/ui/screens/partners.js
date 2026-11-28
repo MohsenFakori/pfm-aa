@@ -483,7 +483,7 @@ function openPartnerDetails(partnerId) {
           <div><p class="text-[10px] text-fg-muted">دریافتی بابت هزینه‌ها</p><p class="text-xs font-bold">${formatTomanShort(b.expenseTransferredIn)}</p></div>
           <div><p class="text-[10px] text-fg-muted">پرداختی بابت هزینه‌ها</p><p class="text-xs font-bold">${formatTomanShort(b.expenseTransferredOut)}</p></div>
           <div class="col-span-2 pt-2 border-t border-white/5"><p class="text-[10px] text-fg-muted">طلب خالص از هزینه‌ها (پرداخت برای دیگران منهای سهم هزینه‌های دیگران)</p><p class="text-xs font-bold">${formatToman(b.netClaimFromExpenses)}</p></div>
-          <div class="col-span-2"><p class="text-[10px] text-fg-muted">تراز تسویه هزینه‌ها</p><p class="text-xs font-bold">${formatToman(b.expenseSettlementPosition)}</p></div>
+          <div class="col-span-2"><p class="text-[10px] text-fg-muted">تراز هزینه‌ها (مثبت = بدهکار)</p><p class="text-xs font-bold">${formatToman(b.expenseSettlementPosition)}</p></div>
           <div class="col-span-2"><p class="text-[10px] text-fg-muted">تراز تسویه سهم پروژه‌ها</p><p class="text-xs font-bold">${formatToman(b.projectSettlementPosition)}</p></div>
         </div>
         <div class="mt-3 pt-2 border-t border-white/5">
@@ -497,7 +497,7 @@ function openPartnerDetails(partnerId) {
           <span class="text-sm font-bold ${b.overallPosition > 0 ? 'text-danger' : b.overallPosition < 0 ? 'text-success' : 'text-fg-muted'}">${b.overallPosition > 0 ? 'بدهکار' : b.overallPosition < 0 ? 'طلبکار' : 'تسویه'}</span>
         </div>
         <p class="text-lg font-bold mt-1 ${b.overallPosition > 0 ? 'text-danger' : b.overallPosition < 0 ? 'text-success' : 'text-fg-muted'}">${formatToman(Math.abs(b.overallPosition))}</p>
-        <p class="text-[9px] text-fg-muted mt-2">فرمول: تراز پروژه‌ها − تراز هزینه‌ها؛ هر انتقال فقط در دسته خودش اثر می‌گذارد.</p>
+        <p class="text-[9px] text-fg-muted mt-2">فرمول: تراز پروژه‌ها + تراز هزینه‌ها؛ در هر دو، مقدار مثبت یعنی بدهکار.</p>
         <p class="text-[9px] text-fg-muted">مقدار مثبت یعنی بدهکار به شرکا؛ مقدار منفی یعنی طلبکار از شرکا.</p>
       </div>
       <div class="flex gap-2">
