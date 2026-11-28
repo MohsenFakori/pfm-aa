@@ -143,10 +143,11 @@ function renderBalanceCard(summary, percent) {
   return `
     <div class="rounded-2xl bg-gradient-to-br from-brand to-brand-dark p-5 shadow-2xl shadow-brand/30">
       <div class="flex items-center justify-between mb-3">
-        <p class="text-xs text-white/80">موجودی کل پروژه‌ها</p>
+        <p class="text-xs text-white/80">مانده قابل دریافت پروژه‌ها</p>
         <i data-lucide="wallet" class="w-5 h-5 text-white/80"></i>
       </div>
       <p class="text-2xl font-bold text-white tabular-nums mb-1">${formatToman(summary.totalRemaining)}</p>
+      <p class="text-[10px] text-white/70 mt-1 mb-2">مجموع مبلغ پروژه‌های دارای مبلغ مشخص، منهای دریافتی‌های تخصیص‌یافته؛ این عدد موجودی نقدی نیست.</p>
       <div class="flex items-center gap-2 mb-3">
         <span class="text-[10px] text-white/70">${toPersianDigits(percent)}٪ دریافتی</span>
         <div class="flex-1 h-1.5 rounded-full bg-white/20 overflow-hidden">
