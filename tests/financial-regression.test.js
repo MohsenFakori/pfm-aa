@@ -44,6 +44,61 @@ test('partner balance includes expense shares and partner transfers', () => {
   assert.equal(result.netPosition, 130);
 });
 
+test('partner settlement positions are opposite for a two-partner project', () => {
+  const data = validData();
+  const first = getPartnerBalance('p1', data);
+  const second = getPartnerBalance('p2', data);
+
+  assert.equal(first.allocatedReceivedFromEmployers, 600);
+  assert.equal(first.collectedShare, 360);
+  assert.equal(first.shareDifference, 240);
+  assert.equal(first.netClaimFromExpenses, 80);
+  assert.equal(first.netTransfer, -50);
+  assert.equal(first.overallPosition, 110);
+
+  assert.equal(second.allocatedReceivedFromEmployers, 0);
+  assert.equal(second.collectedShare, 240);
+  assert.equal(second.shareDifference, -240);
+  assert.equal(second.netClaimFromExpenses, -80);
+  assert.equal(second.netTransfer, 50);
+  assert.equal(second.overallPosition, -110);
+
+  assert.equal(first.overallPosition + second.overallPosition, 0);
+});
+
+test('partner balance ignores soft-deleted expenses and transfers', () => {
+  const data = validData();
+  data.expenses.push({
+    id: 'x-deleted', projectId: 'pr1', paidByPartnerId: 'p1',
+    amount: 900, date: '2026-11-12', deletedAt: '2026-11-13',
+    shareDistribution: [{ partnerId: 'p1', amount: 100 }, { partnerId: 'p2', amount: 800 }]
+  });
+  data.partnerTransfers.push({
+    id: 't-deleted', fromPartnerId: 'p1', toPartnerId: 'p2',
+    amount: 700, date: '2026-11-12', deletedAt: '2026-11-13'
+  });
+
+  const result = getPartnerBalance('p1', data);
+  assert.equal(result.paidForOthers, 80);
+  assert.equal(result.transferredOut, 50);
+  assert.equal(result.netPosition, 130);
+});
+
+test('partner balance flags shares linked to projects with unknown amounts', () => {
+  const data = validData();
+  data.projects.push({
+    id: 'pr-unknown', employerId: 'e1', amountUndetermined: true, status: 'active'
+  });
+  data.projectShares.push({
+    id: 's-unknown', projectId: 'pr-unknown', partnerId: 'p1', percentage: 25
+  });
+
+  const result = getPartnerBalance('p1', data);
+  assert.equal(result.hasUnknownProjectAmounts, true);
+  assert.equal(result.unknownProjectCount, 1);
+  assert.equal(result.expectedShare, 600);
+});
+
 test('cash flow includes receipts and expenses within the selected date range', () => {
   const data = validData();
   const result = getCashFlow('2026-11-01', '2026-11-30', data);
