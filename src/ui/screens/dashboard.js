@@ -3,10 +3,10 @@
 
 import { state } from '../../core/state.js';
 import { navigate } from '../../core/router.js';
-import { Avatar, EmptyState, ProgressBar, SectionHeader, StatCard } from '../components/ui.js';
+import { Avatar, EmptyState, ProgressBar, SectionHeader } from '../components/ui.js';
 import { openSheet, closeSheet } from '../components/sheet.js';
 import { formatToman, formatTomanShort } from '../../utils/number.js';
-import { formatJalali, toPersianDigits, getWeekday, today, isSameDay } from '../../utils/date.js';
+import { formatJalali, toPersianDigits, getWeekday, today } from '../../utils/date.js';
 import { getDashboardSummary, getProjectProgressPercent, getProjectReceived, getProjectRemaining, getEmployerBalance } from '../../domain/calculations.js';
 
 const COLOR_HEX = {
@@ -79,7 +79,6 @@ function renderGreetingHeader(firstLetter, greeting, userName, avatarColor, avat
   const todayIso = today();
   const weekday = getWeekday(todayIso);
   const dateStr = formatJalali(todayIso);
-  const reminderCount = getReminderItems().length;
   return `
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2.5">
@@ -98,95 +97,10 @@ function renderGreetingHeader(firstLetter, greeting, userName, avatarColor, avat
   `;
 }
 
-// === خلاصه روزانه ===
-// تعداد تراکنش‌های امروز، جمع مبالغ، تعداد فعالیت‌های امروز و آخرین تراکنش امروز
-function renderTodaySummary() {
-  const todayIso = today();
-
-  const todaysReceipts = (state.data.receipts || []).filter(r => !r.deletedAt && isSameDay(r.date, todayIso));
-  const todaysExpenses = (state.data.expenses || []).filter(e => !e.deletedAt && isSameDay(e.date, todayIso));
-  const todaysTransfers = (state.data.partnerTransfers || []).filter(t => !t.deletedAt && isSameDay(t.date, todayIso));
-  const todaysActivities = (state.data.dailyActivities || []).filter(a => !a.deletedAt && isSameDay(a.date, todayIso));
-
-  const txCount = todaysReceipts.length + todaysExpenses.length + todaysTransfers.length;
-  const inflow = todaysReceipts.reduce((s, r) => s + (r.amount || 0), 0);
-  const outflow = todaysExpenses.reduce((s, e) => s + (e.amount || 0), 0) + todaysTransfers.reduce((s, t) => s + (t.amount || 0), 0);
-
-  // آخرین تراکنش امروز
-  const recentItems = [];
-  for (const r of todaysReceipts) {
-    const employer = (state.data.employers || []).find(e => e.id === r.employerId);
-    recentItems.push({ type: 'receipt', date: r.date, amount: r.amount, title: `دریافتی از ${employer ? employer.name : 'کارفرما'}` });
-  }
-  for (const e of todaysExpenses) {
-    recentItems.push({ type: 'expense', date: e.date, amount: e.amount, title: e.title || 'هزینه' });
-  }
-  for (const t of todaysTransfers) {
-    const toP = (state.data.partners || []).find(p => p.id === t.toPartnerId);
-    recentItems.push({ type: 'transfer', date: t.date, amount: t.amount, title: `انتقال به ${toP ? toP.name : 'شریک'}` });
-  }
-  recentItems.sort((a, b) => new Date(b.date) - new Date(a.date));
-  const lastTwo = recentItems.slice(0, 2);
-
-  const config = {
-    receipt:  { icon: 'arrow-down-left', color: 'success', prefix: '+' },
-    expense:  { icon: 'arrow-up-right', color: 'danger',  prefix: '-' },
-    transfer: { icon: 'arrow-left-right', color: 'info',    prefix: '-' }
-  };
-  const colorMap = { success: 'bg-success-soft text-success', danger: 'bg-danger-soft text-danger', info: 'bg-info-soft text-purple-300' };
-
-  // اگر چیزی برای امروز نیست، فقط خلاصه آماری نشان بده
-  const recentHtml = lastTwo.length > 0
-    ? `<div class="glass rounded-xl divide-y divide-line/50 mt-2">
-        ${lastTwo.map(item => {
-          const c = config[item.type];
-          return `
-            <div class="flex items-center gap-2.5 p-2.5">
-              <div class="w-7 h-7 rounded-lg ${colorMap[c.color]} flex items-center justify-center shrink-0"><i data-lucide="${c.icon}" class="w-3.5 h-3.5"></i></div>
-              <div class="flex-1 min-w-0">
-                <p class="text-[11px] font-bold truncate">${item.title}</p>
-              </div>
-              <p class="text-[11px] font-bold tabular-nums ${c.prefix === '+' ? 'text-success' : 'text-danger'}">${c.prefix}${formatTomanShort(item.amount)}</p>
-            </div>
-          `;
-        }).join('')}
-      </div>`
-    : '';
-
-  return `
-    <div class="glass rounded-2xl p-3.5">
-      <div class="flex items-center justify-between mb-2.5">
-        <div class="flex items-center gap-2">
-          <div class="w-7 h-7 rounded-lg bg-cta/15 text-cta flex items-center justify-center">
-            <i data-lucide="sun" class="w-4 h-4"></i>
-          </div>
-          <p class="text-xs font-bold">امروز</p>
-        </div>
-        <span class="text-[10px] text-fg-muted">${getWeekday(todayIso)} · ${formatJalali(todayIso)}</span>
-      </div>
-      <div class="grid grid-cols-3 gap-2 text-center">
-        <div class="rounded-lg bg-white/5 py-2">
-          <p class="text-[9px] text-fg-muted">تراکنش</p>
-          <p class="text-sm font-bold tabular-nums">${toPersianDigits(txCount)}</p>
-        </div>
-        <div class="rounded-lg bg-white/5 py-2">
-          <p class="text-[9px] text-fg-muted">ورودی</p>
-          <p class="text-sm font-bold tabular-nums text-success">${formatTomanShort(inflow)}</p>
-        </div>
-        <div class="rounded-lg bg-white/5 py-2">
-          <p class="text-[9px] text-fg-muted">فعالیت</p>
-          <p class="text-sm font-bold tabular-nums">${toPersianDigits(todaysActivities.length)}</p>
-        </div>
-      </div>
-      ${recentHtml}
-    </div>
-  `;
-}
-
 // === یادآوری‌ها ===
 export function getReminderItems() {
   const items = [];
-  const completedProjects = (state.data.projects || []).filter(p => !p.deletedAt && p.status === 'completed');
+  const completedProjects = (state.data.projects || []).filter(p => !p.deletedAt && (p.status === 'archived' || p.status === 'completed'));
   for (const p of completedProjects) {
     const remaining = getProjectRemaining(p.id, state.data);
     if (remaining > 0) items.push({ type: 'project', icon: 'briefcase', color: 'cta', title: p.title, amount: remaining, description: 'تسویه نشده', path: `/project/${p.id}` });
@@ -243,15 +157,6 @@ function renderBalanceCard(summary, percent) {
         <div><p class="text-[10px] text-white/70 mb-0.5">انتظار</p><p class="text-xs font-bold text-white tabular-nums">${formatTomanShort(summary.totalExpected)}</p></div>
         <div><p class="text-[10px] text-white/70 mb-0.5">دریافتی</p><p class="text-xs font-bold text-white tabular-nums">${formatTomanShort(summary.totalReceived)}</p></div>
       </div>
-    </div>
-  `;
-}
-
-function renderQuickStats(summary) {
-  return `
-    <div class="grid grid-cols-2 gap-3">
-      ${StatCard({ icon: 'arrow-down-left', iconColor: 'success', label: 'درآمد ماه', value: formatTomanShort(summary.monthInflow) })}
-      ${StatCard({ icon: 'arrow-up-right', iconColor: 'danger', label: 'هزینه ماه', value: formatTomanShort(summary.monthOutflow) })}
     </div>
   `;
 }
