@@ -1332,6 +1332,7 @@ function editTransfer(id, afterSave = renderTransactionsPage) {
     toPartnerId: transfer.toPartnerId || '',
     amount: String(transfer.amount || ''),
     date: transfer.date || today(),
+    purpose: transfer.purpose || 'project_settlement',
     note: transfer.note || ''
   };
   openSheet(renderTransferEditForm(), {
@@ -1359,6 +1360,7 @@ function renderTransferEditForm() {
       <div class="space-y-3">
         ${Select({ name: 'editFromPartnerId', label: 'از شریک', options: partnerOptions, value: editTransferState.fromPartnerId, required: true, placeholder: 'انتخاب شریک مبدأ', icon: 'user' })}
         ${Select({ name: 'editToPartnerId', label: 'به شریک', options: partnerOptions, value: editTransferState.toPartnerId, required: true, placeholder: 'انتخاب شریک مقصد', icon: 'user' })}
+        ${Select({ name: 'editPurpose', label: 'هدف انتقال', options: [{ value: 'project_settlement', label: 'تسویه سهم پروژه‌ها' }, { value: 'expense_settlement', label: 'تسویه هزینه‌ها و بدهی بین شرکا' }], value: editTransferState.purpose || 'project_settlement', required: true, icon: 'arrow-left-right' })}
         ${Input({ name: 'editAmount', type: 'text', label: 'مبلغ', placeholder: 'مبلغ به تومان', value: formatTransactionAmount(editTransferState.amount), required: true, suffix: 'تومان', inputmode: 'numeric' })}
         <p data-edit-transfer-amount-words class="text-[11px] text-fg-muted -mt-1 min-h-4" aria-live="polite"></p>
         <div>
@@ -1389,6 +1391,8 @@ function attachTransferEditListeners() {
   if (toSelect) toSelect.addEventListener('change', (e) => { editTransferState.toPartnerId = e.target.value; });
   const amountInput = sheet.querySelector('[name="editAmount"]');
   attachTransactionAmountInput(amountInput, editTransferState, sheet.querySelector('[data-edit-transfer-amount-words]'));
+  const purposeSelect = sheet.querySelector('[name="editPurpose"]');
+  if (purposeSelect) purposeSelect.addEventListener('change', (e) => { editTransferState.purpose = e.target.value; });
   const noteInput = sheet.querySelector('[name="editNote"]');
   if (noteInput) noteInput.addEventListener('input', (e) => { editTransferState.note = e.target.value; });
 }
@@ -1440,6 +1444,7 @@ async function saveTransferEdit() {
       toPartnerId: editTransferState.toPartnerId,
       amount,
       date: editTransferState.date,
+      purpose: editTransferState.purpose || 'project_settlement',
       note: editTransferState.note?.trim() || ''
     });
     state.updateEntity('partnerTransfers', updated);
