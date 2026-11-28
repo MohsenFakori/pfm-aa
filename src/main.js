@@ -82,9 +82,7 @@ async function init() {
     registerRoute('/onboarding', renderOnboardingPage);
 
     // 3. Wrap each route to render shell first then page
-    const originalRoutes = new Map();
     for (const [path, handler] of routesIterator()) {
-      originalRoutes.set(path, handler);
       registerRoute(path, (params) => {
         const settings = state.data.settings || {};
         // If onboarding not completed and route isn't onboarding → redirect to onboarding
