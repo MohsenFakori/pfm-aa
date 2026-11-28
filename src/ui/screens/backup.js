@@ -236,9 +236,9 @@ function importJSON(file) {
           try {
             previousData = await reports.exportAll();
             downloadBackupFile(previousData, 'before-restore');
-            await applyBackupData(data);
+            const importedCount = await applyBackupData(data);
             await state.hydrate();
-            showToast('داده‌ها با موفقیت بازگردانی شد', 'success');
+            showToast(`بازگردانی ${toPersianDigits(importedCount)} رکورد با موفقیت انجام شد`, 'success');
             navigate('/dashboard');
           } catch (err) {
             console.error('Restore failed:', err);
@@ -285,6 +285,9 @@ function validateBackupFile(backup) {
   if (backup.data.dashboardShortcuts !== undefined && !Array.isArray(backup.data.dashboardShortcuts)) {
     return { valid: false, message: 'ساختار میان‌برهای داشبورد در فایل بکاپ نامعتبر است' };
   }
+  if (backup.data.autoBackup !== undefined && (!backup.data.autoBackup || typeof backup.data.autoBackup !== 'object' || Array.isArray(backup.data.autoBackup))) {
+    return { valid: false, message: 'ساختار اطلاعات بکاپ خودکار نامعتبر است' };
+  }
   return { valid: true };
 }
 
@@ -320,6 +323,10 @@ async function applyBackupData(backup) {
   if (Array.isArray(backup.data.dashboardShortcuts)) {
     storage.saveDashboardShortcuts(backup.data.dashboardShortcuts);
   }
+  if (backup.data.autoBackup && typeof backup.data.autoBackup === 'object') {
+    storage.saveAutoBackup(backup.data.autoBackup);
+  }
+  return BACKUP_STORE_KEYS.reduce((count, key) => count + (Array.isArray(backup.data[key]) ? backup.data[key].length : 0), 0);
 }
 
 function toggleAutoBackup() {
