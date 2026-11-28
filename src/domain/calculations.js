@@ -216,32 +216,32 @@ export function getPartnerBalance(partnerId, data = null) {
   // طلب خالص از هزینه‌ها (مثبت = دیگران به من بدهکار)
   const netClaimFromExpenses = paidForOthers - owedToOthers;
 
-  // انتقال‌ها
-  const transferredIn = (state.partnerTransfers || [])
-    .filter(t => t.toPartnerId === partnerId && !t.deletedAt)
-    .reduce((s, t) => s + (t.amount || 0), 0);
-  const transferredOut = (state.partnerTransfers || [])
-    .filter(t => t.fromPartnerId === partnerId && !t.deletedAt)
-    .reduce((s, t) => s + (t.amount || 0), 0);
-
-  // انتقال خالص (مثبت = پول دریافت کرده)
+  // تفکیک انتقال‌ها بر اساس هدف؛ رکوردهای قدیمی بدون purpose، پروژه‌ای محسوب می‌شوند.
+  const activeTransfers = (state.partnerTransfers || []).filter(t => !t.deletedAt);
+  const isProjectTransfer = t => !t.purpose || t.purpose === 'project_settlement';
+  const isExpenseTransfer = t => t.purpose === 'expense_settlement';
+  const sumTransfers = (predicate, direction) => activeTransfers
+    .filter(t => predicate(t) && t[direction] === partnerId)
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
+  const projectTransferredIn = sumTransfers(isProjectTransfer, 'toPartnerId');
+  const projectTransferredOut = sumTransfers(isProjectTransfer, 'fromPartnerId');
+  const expenseTransferredIn = sumTransfers(isExpenseTransfer, 'toPartnerId');
+  const expenseTransferredOut = sumTransfers(isExpenseTransfer, 'fromPartnerId');
+  const projectNetTransfer = projectTransferredIn - projectTransferredOut;
+  const expenseNetTransfer = expenseTransferredIn - expenseTransferredOut;
+  const transferredIn = projectTransferredIn + expenseTransferredIn;
+  const transferredOut = projectTransferredOut + expenseTransferredOut;
   const netTransfer = transferredIn - transferredOut;
 
-  // وضعیت نهایی:
-  // طلب از هزینه‌ها - پول دریافتی از انتقال
-  // مثبت = طلبکار (بیشتر برای دیگران خرج کرده تا پول گرفته)
-  // منفی = بدهکار (بیشتر پول گرفته تا برای دیگران خرج کرده)
-  // صفر = تسویه
-  const netPosition = netClaimFromExpenses - netTransfer;
-
-  // اختلاف بین وجه تخصیص‌یافته‌ای که شریک دریافت کرده و سهم او از وجوه وصول‌شده
-  // مطالبات وصول‌نشده از کارفرما در این مقایسه وارد نمی‌شوند.
+  // مثبت = بدهکار به سایر شرکا
   const shareDifference = allocatedReceivedFromEmployers - collectedShare;
+  const projectSettlementPosition = shareDifference + projectNetTransfer;
+  const expenseSettlementPosition = netClaimFromExpenses - expenseNetTransfer;
+  const netPosition = expenseSettlementPosition;
   const overShare = Math.max(0, shareDifference);
   const underShare = Math.max(0, -shareDifference);
-
-  // مثبت = بدهکار به شرکا؛ منفی = طلبکار از شرکا
-  const overallPosition = shareDifference - netPosition;
+  // تراز نهایی = تراز پروژه‌ها منهای تراز هزینه‌ها
+  const overallPosition = projectSettlementPosition - expenseSettlementPosition;
   const difference = overallPosition;
 
   let status = 'even';
@@ -264,6 +264,14 @@ export function getPartnerBalance(partnerId, data = null) {
     transferredIn,
     transferredOut,
     netTransfer,
+    projectTransferredIn,
+    projectTransferredOut,
+    projectNetTransfer,
+    expenseTransferredIn,
+    expenseTransferredOut,
+    expenseNetTransfer,
+    projectSettlementPosition,
+    expenseSettlementPosition,
     netPosition,
     overallPosition,
     difference,
