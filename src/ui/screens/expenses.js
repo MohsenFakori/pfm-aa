@@ -69,7 +69,7 @@ function defaultExpenseFormState() {
 }
 
 function defaultTransferFormState() {
-  return { fromPartnerId: '', toPartnerId: '', amount: '', date: today(), note: '' };
+  return { fromPartnerId: '', toPartnerId: '', amount: '', date: today(), note: '', purpose: 'project_settlement' };
 }
 
 // =========== SHARE DISTRIBUTION (exported for reuse in edit form) ===========
@@ -460,6 +460,7 @@ function renderTransferForm() {
       ${visualHtml}
       ${Select({ name: 'fromPartnerId', label: 'از شریک', options: partnerOptions, value: transferFormState.fromPartnerId, required: true, placeholder: 'انتخاب شریک مبدأ', icon: 'user' })}
       ${Select({ name: 'toPartnerId', label: 'به شریک', options: partnerOptions, value: transferFormState.toPartnerId, required: true, placeholder: 'انتخاب شریک مقصد', icon: 'user' })}
+      ${Select({ name: 'purpose', label: 'هدف انتقال', options: [{ value: 'project_settlement', label: 'تسویه سهم پروژه‌ها' }, { value: 'expense_settlement', label: 'تسویه هزینه‌ها و بدهی بین شرکا' }], value: transferFormState.purpose || 'project_settlement', required: true, icon: 'arrow-left-right' })}
       ${Input({ name: 'amount', type: 'text', label: 'مبلغ', placeholder: 'مبلغ به تومان', value: formatAmountInput(transferFormState.amount), required: true, suffix: 'تومان', inputmode: 'numeric' })}
       <p data-transfer-amount-words class="text-[11px] text-fg-muted -mt-1 min-h-4" aria-live="polite"></p>
       <div>
@@ -510,6 +511,8 @@ function attachTransferFormListeners() {
       expenseAmountWordsTimer = setTimeout(updateAmountWords, 650);
     });
   }
+  const purposeSelect = main.querySelector('[name="purpose"]');
+  if (purposeSelect) purposeSelect.addEventListener('change', (e) => { transferFormState.purpose = e.target.value; });
   const noteInput = main.querySelector('[name="note"]');
   if (noteInput) noteInput.addEventListener('input', (e) => { transferFormState.note = e.target.value; });
 }
@@ -541,6 +544,7 @@ async function saveTransfer() {
       toPartnerId: transferFormState.toPartnerId,
       amount,
       date: transferFormState.date,
+      purpose: transferFormState.purpose || 'project_settlement',
       note: transferFormState.note?.trim() || ''
     };
     const transfer = await repo.partnerTransfers.create(transferData);
