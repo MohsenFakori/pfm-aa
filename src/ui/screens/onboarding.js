@@ -63,7 +63,7 @@ function renderWelcomeStep() {
         <i data-lucide="wallet" class="w-14 h-14 text-white"></i>
       </div>
       <h1 class="text-2xl font-bold mb-3">به اپلیکیشن مدیریت مالی پروژه‌های شخصی خوش آمدید</h1>
-      <p class="text-sm text-fg-muted leading-relaxed mb-10">در کمتر از ۲ دقیقه، اپ را آماده استفاده کن. بدون نیاز به ثبت‌نام، همه چیز روی دستگاه خودت ذخیره می‌شود.</p>
+      <p class="text-sm text-fg-muted leading-relaxed mb-10">در کمتر از ۲ دقیقه، اپ را آماده استفاده کن. پس از ورود به حساب محلی، اطلاعاتت در فضای جداگانه همین مرورگر ذخیره می‌شود.</p>
       <button onclick="window.__onboardingNext()" class="h-12 px-8 rounded-xl bg-cta hover:bg-cta-dark text-white text-sm font-medium shadow-lg shadow-cta/30 transition flex items-center gap-2 active:scale-95">
         شروع <i data-lucide="chevron-left" class="w-4 h-4"></i>
       </button>
