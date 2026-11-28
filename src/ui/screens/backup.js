@@ -213,34 +213,47 @@ function importJSON(file) {
     try {
       const text = e.target.result;
       const data = JSON.parse(text);
-      if (!data || typeof data !== 'object' || !data.version || !data.data) {
-        showToast('فایل بکاپ نامعتبر است', 'error');
+      const validation = validateBackupFile(data);
+      if (!validation.valid) {
+        showToast(validation.message, 'error');
         return;
       }
+
+      const preview = BACKUP_STORE_KEYS.map(key => {
+        const labels = {
+          projects: 'پروژه', employers: 'کارفرما', partners: 'شریک',
+          receipts: 'دریافتی', expenses: 'هزینه', partnerTransfers: 'انتقال'
+        };
+        return labels[key] ? `${labels[key]}: ${(data.data[key] || []).length}` : null;
+      }).filter(Boolean).join(' · ');
+
       confirmDialog({
         title: 'بازگردانی داده',
-        message: 'این عملیات همه داده‌های فعلی را با محتوای فایل جایگزین می‌کند. ادامه می‌دهید؟',
+        message: `اطلاعات فایل: ${preview}. پیش از جایگزینی، از اطلاعات فعلی نسخه پشتیبان دانلود می‌شود. ادامه می‌دهید؟`,
         confirmText: 'بله، بازگردانی کن', danger: true,
         onConfirm: async () => {
+          let previousData = null;
           try {
-            await db.clearAll();
-            for (const storeName of BACKUP_STORE_KEYS) {
-              const items = data.data[storeName];
-              if (Array.isArray(items) && items.length > 0) {
-                await repo[storeName].bulkInsert(items);
-              }
-            }
-            if (data.data.settings) storage.saveSettings(data.data.settings);
-            if (data.data.customOrders && typeof data.data.customOrders === 'object') {
-              for (const [k, v] of Object.entries(data.data.customOrders)) storage.saveCustomOrder(k, v);
-            }
-            if (Array.isArray(data.data.dashboardShortcuts)) storage.saveDashboardShortcuts(data.data.dashboardShortcuts);
+            previousData = await reports.exportAll();
+            downloadBackupFile(previousData, 'before-restore');
+            await applyBackupData(data);
             await state.hydrate();
             showToast('داده‌ها با موفقیت بازگردانی شد', 'success');
             navigate('/dashboard');
           } catch (err) {
             console.error('Restore failed:', err);
-            showToast('خطا در بازگردانی داده', 'error');
+            if (previousData) {
+              try {
+                await applyBackupData(previousData);
+                await state.hydrate();
+                showToast('بازگردانی ناموفق بود؛ اطلاعات قبلی بازیابی شدند', 'warning');
+              } catch (rollbackError) {
+                console.error('Restore rollback failed:', rollbackError);
+                showToast('خطا در بازگردانی و بازیابی نسخه قبلی؛ فایل پشتیبان دانلودشده را نگه دارید', 'error');
+              }
+            } else {
+              showToast('خطا در تهیه نسخه پشتیبان؛ هیچ تغییری اعمال نشد', 'error');
+            }
           }
         }
       });
@@ -251,6 +264,62 @@ function importJSON(file) {
   };
   reader.onerror = () => showToast('خطا در خواندن فایل', 'error');
   reader.readAsText(file);
+}
+
+function validateBackupFile(backup) {
+  if (!backup || typeof backup !== 'object' || backup.version !== 1 || !backup.data || typeof backup.data !== 'object') {
+    return { valid: false, message: 'ساختار یا نسخه فایل بکاپ پشتیبانی نمی‌شود' };
+  }
+
+  for (const storeName of BACKUP_STORE_KEYS) {
+    if (backup.data[storeName] !== undefined && !Array.isArray(backup.data[storeName])) {
+      return { valid: false, message: `ساختار بخش ${storeName} در فایل بکاپ نامعتبر است` };
+    }
+  }
+  if (backup.data.settings !== undefined && (!backup.data.settings || typeof backup.data.settings !== 'object' || Array.isArray(backup.data.settings))) {
+    return { valid: false, message: 'ساختار تنظیمات در فایل بکاپ نامعتبر است' };
+  }
+  if (backup.data.customOrders !== undefined && (!backup.data.customOrders || typeof backup.data.customOrders !== 'object' || Array.isArray(backup.data.customOrders))) {
+    return { valid: false, message: 'ساختار ترتیب‌های سفارشی در فایل بکاپ نامعتبر است' };
+  }
+  if (backup.data.dashboardShortcuts !== undefined && !Array.isArray(backup.data.dashboardShortcuts)) {
+    return { valid: false, message: 'ساختار میان‌برهای داشبورد در فایل بکاپ نامعتبر است' };
+  }
+  return { valid: true };
+}
+
+function downloadBackupFile(data, suffix = 'backup') {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const todayIso = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `pfm-${suffix}-${todayIso}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function applyBackupData(backup) {
+  await db.clearAll();
+  for (const storeName of BACKUP_STORE_KEYS) {
+    const items = backup.data[storeName];
+    if (Array.isArray(items) && items.length > 0) {
+      await repo[storeName].bulkInsert(items);
+    }
+  }
+
+  storage.clearAll();
+  if (backup.data.settings) storage.saveSettings(backup.data.settings);
+  if (backup.data.customOrders && typeof backup.data.customOrders === 'object') {
+    for (const [key, value] of Object.entries(backup.data.customOrders)) {
+      if (Array.isArray(value)) storage.saveCustomOrder(key, value);
+    }
+  }
+  if (Array.isArray(backup.data.dashboardShortcuts)) {
+    storage.saveDashboardShortcuts(backup.data.dashboardShortcuts);
+  }
 }
 
 function toggleAutoBackup() {
