@@ -150,8 +150,9 @@ test('project and expense transfers affect only their own settlement category', 
   assert.equal(first.projectTransferredOut, 50);
   assert.equal(first.expenseTransferredOut, 30);
   assert.equal(first.projectSettlementPosition, 190);
-  assert.equal(first.expenseSettlementPosition, 110);
+  assert.equal(first.expenseSettlementPosition, -110);
   assert.equal(first.overallPosition, 80);
+  assert.equal(second.expenseSettlementPosition, 110);
   assert.equal(second.overallPosition, -80);
   assert.equal(first.overallPosition + second.overallPosition, 0);
 });
