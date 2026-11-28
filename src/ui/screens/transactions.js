@@ -128,7 +128,7 @@ export function renderTransactionsPage() {
   for (const t of transfers) {
     const fromPartner = (state.data.partners || []).find(p => p.id === t.fromPartnerId);
     const toPartner = (state.data.partners || []).find(p => p.id === t.toPartnerId);
-    allItems.push({ id: t.id, type: 'transfer', date: t.date, amount: t.amount, fromPartner, toPartner, note: t.note });
+    allItems.push({ id: t.id, type: 'transfer', date: t.date, amount: t.amount, fromPartner, toPartner, purpose: t.purpose || 'project_settlement', note: t.note });
   }
 
   allItems.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -325,7 +325,7 @@ function renderTransferItem(item) {
       <div class="flex-1 min-w-0">
         <p class="text-sm font-bold truncate">انتقال از ${fromName} به ${toName}</p>
         <p class="text-[11px] text-fg-muted mt-0.5 flex items-center gap-1.5">
-          <i data-lucide="calendar" class="w-3 h-3"></i>${formatJalali(item.date)}
+          <i data-lucide="calendar" class="w-3 h-3"></i>${formatJalali(item.date)} · ${item.purpose === 'expense_settlement' ? 'تسویه هزینه‌ها' : 'تسویه سهم پروژه‌ها'}
         </p>
       </div>
       <div class="text-left shrink-0"><p class="text-sm font-bold text-fg-muted tabular-nums">${formatTomanShort(item.amount)}</p></div>
