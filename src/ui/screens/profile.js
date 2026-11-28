@@ -1,5 +1,5 @@
 // src/ui/screens/profile.js
-// پروفایل محلی کاربر؛ رمز عبور پس از اتصال سرویس احراز هویت فعال می‌شود.
+// پروفایل حساب محلی؛ تغییر رمز از طریق auth provider انجام می‌شود.
 
 import { state } from '../../core/state.js';
 import { navigate } from '../../core/router.js';
@@ -91,10 +91,14 @@ export function renderProfilePage() {
 }
 
 async function logoutUser() {
-  await authService.logout();
-  clearActiveSession();
-  showToast('از حساب خارج شدید', 'success');
-  navigate('/auth');
+  try {
+    await authService.logout();
+    clearActiveSession();
+    showToast('از حساب خارج شدید', 'success');
+    navigate('/auth');
+  } catch (error) {
+    showToast(error.message || 'خروج از حساب انجام نشد', 'error');
+  }
 }
 
 async function changeProfilePassword() {
