@@ -13,6 +13,8 @@ if (typeof window !== 'undefined') {
 }
 
 import { state } from './core/state.js';
+import './core/local-auth.js';
+import { restoreUserSession, isSessionActive } from './core/user-session.js';
 import { initRouter, registerRoute, navigate } from './core/router.js';
 import { renderShell, refreshHeader } from './ui/components/shell.js';
 import './ui/components/toast.js';
@@ -58,8 +60,8 @@ async function init() {
   initialized = true;
 
   try {
-    // 1. Hydrate state from IndexedDB
-    await state.hydrate();
+    // 1. Restore local account and hydrate only that account's database
+    await restoreUserSession();
 
     // 2. Register routes
     registerRoute('/dashboard', renderDashboardPage);
@@ -85,8 +87,17 @@ async function init() {
     for (const [path, handler] of routesIterator()) {
       registerRoute(path, (params) => {
         const settings = state.data.settings || {};
+        // Require a local account before opening user data
+        if (!isSessionActive() && path !== '/auth') {
+          navigate('/auth');
+          return;
+        }
+        if (isSessionActive() && path === '/auth') {
+          navigate(settings.onboardingCompleted ? '/dashboard' : '/onboarding');
+          return;
+        }
         // If onboarding not completed and route isn't onboarding → redirect to onboarding
-        if (!settings.onboardingCompleted && path !== '/onboarding') {
+        if (isSessionActive() && !settings.onboardingCompleted && path !== '/onboarding' && path !== '/auth') {
           navigate('/onboarding');
           return;
         }
