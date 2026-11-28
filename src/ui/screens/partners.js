@@ -168,28 +168,22 @@ function renderPartnerOverview(partners) {
 
 // === تسویه خودکار شرکا ===
 // الگوریتم حریصانه: بزرگ‌ترین بدهکار به بزرگ‌ترین طلبکار پرداخت می‌کند تا تسویه شود.
-function calculateSettlements(partners) {
-  const balances = partners.map(p => ({ partner: p, balance: getPartnerBalance(p.id, state.data) }));
-  const creditors = balances.filter(b => b.balance.overallPosition < 0).sort((a, b) => a.balance.overallPosition - b.balance.overallPosition);
-  const debtors = balances.filter(b => b.balance.overallPosition > 0).sort((a, b) => b.balance.overallPosition - a.balance.overallPosition);
-
+function calculateSettlements(partners, positionKey, purpose) {
+  const balances = partners.map(partner => ({ partner, position: getPartnerBalance(partner.id, state.data)[positionKey] }));
+  const creditors = balances.filter(x => x.position < 0).sort((x, y) => x.position - y.position);
+  const debtors = balances.filter(x => x.position > 0).sort((x, y) => y.position - x.position);
   const settlements = [];
   let ci = 0, di = 0;
   while (ci < creditors.length && di < debtors.length) {
-    const amount = Math.min(-creditors[ci].balance.overallPosition, debtors[di].balance.overallPosition);
-    if (amount > 0) {
-      settlements.push({
-        fromId: debtors[di].partner.id,
-        fromName: debtors[di].partner.name,
-        toId: creditors[ci].partner.id,
-        toName: creditors[ci].partner.name,
-        amount
-      });
-    }
-    creditors[ci].balance.overallPosition += amount;
-    debtors[di].balance.overallPosition -= amount;
-    if (creditors[ci].balance.overallPosition >= 0) ci++;
-    if (debtors[di].balance.overallPosition <= 0) di++;
+    const amount = Math.min(-creditors[ci].position, debtors[di].position);
+    if (amount > 0) settlements.push({
+      fromId: debtors[di].partner.id, fromName: debtors[di].partner.name,
+      toId: creditors[ci].partner.id, toName: creditors[ci].partner.name, amount, purpose
+    });
+    creditors[ci].position += amount;
+    debtors[di].position -= amount;
+    if (creditors[ci].position >= 0) ci++;
+    if (debtors[di].position <= 0) di++;
   }
   return settlements;
 }
@@ -198,7 +192,7 @@ function renderAutoSettleButton(allPartners) {
   // دکمه فقط اگر حداقل یک موقعیت غیر صفر وجود داشته باشد نشان داده می‌شود
   const hasNonZero = allPartners.some(p => {
     const b = getPartnerBalance(p.id, state.data);
-    return b.overallPosition !== 0;
+    return b.projectSettlementPosition !== 0 || b.expenseSettlementPosition !== 0;
   });
   if (!hasNonZero) return '';
   return `
@@ -215,7 +209,10 @@ window.__autoSettle = function() {
   const allPartners = (state.data.partners || []).filter(p => !p.deletedAt);
   if (allPartners.length === 0) return;
 
-  const settlements = calculateSettlements(allPartners);
+  const settlements = [
+    ...calculateSettlements(allPartners, 'projectSettlementPosition', 'project_settlement'),
+    ...calculateSettlements(allPartners, 'expenseSettlementPosition', 'expense_settlement')
+  ];
   if (settlements.length === 0) {
     showToast('همه شرکا تسویه هستند', 'success');
     return;
@@ -228,7 +225,7 @@ window.__autoSettle = function() {
       </div>
       <div class="flex-1 min-w-0 text-xs">
         <p class="font-bold truncate">${s.fromName} → ${s.toName}</p>
-        <p class="text-[10px] text-fg-muted">انتقال بین شرکا</p>
+        <p class="text-[10px] text-fg-muted">${s.purpose === 'expense_settlement' ? 'تسویه هزینه‌ها' : 'تسویه سهم پروژه‌ها'}</p>
       </div>
       <p class="text-xs font-bold text-success tabular-nums shrink-0">${formatTomanShort(s.amount)}</p>
     </div>
@@ -265,7 +262,8 @@ window.__autoSettle = function() {
               toPartnerId: s.toId,
               amount: s.amount,
               date: dateIso,
-              note: 'تسویه خودکار'
+              purpose: s.purpose,
+              note: s.purpose === 'expense_settlement' ? 'تسویه خودکار هزینه‌ها' : 'تسویه خودکار سهم پروژه‌ها'
             });
             state.updateEntity('partnerTransfers', transfer);
           }
@@ -479,14 +477,17 @@ function openPartnerDetails(partnerId) {
         <div class="grid grid-cols-2 gap-3">
           <div><p class="text-[10px] text-fg-muted">پرداخت برای دیگران</p><p class="text-xs font-bold">${formatTomanShort(b.paidForOthers)}</p></div>
           <div><p class="text-[10px] text-fg-muted">سهم از هزینه دیگران</p><p class="text-xs font-bold">${formatTomanShort(b.owedToOthers)}</p></div>
-          <div><p class="text-[10px] text-fg-muted">انتقال دریافتی</p><p class="text-xs font-bold">${formatTomanShort(b.transferredIn)}</p></div>
-          <div><p class="text-[10px] text-fg-muted">انتقال پرداختی</p><p class="text-xs font-bold">${formatTomanShort(b.transferredOut)}</p></div>
+          <div><p class="text-[10px] text-fg-muted">دریافتی بابت پروژه‌ها</p><p class="text-xs font-bold">${formatTomanShort(b.projectTransferredIn)}</p></div>
+          <div><p class="text-[10px] text-fg-muted">پرداختی بابت پروژه‌ها</p><p class="text-xs font-bold">${formatTomanShort(b.projectTransferredOut)}</p></div>
+          <div><p class="text-[10px] text-fg-muted">دریافتی بابت هزینه‌ها</p><p class="text-xs font-bold">${formatTomanShort(b.expenseTransferredIn)}</p></div>
+          <div><p class="text-[10px] text-fg-muted">پرداختی بابت هزینه‌ها</p><p class="text-xs font-bold">${formatTomanShort(b.expenseTransferredOut)}</p></div>
           <div class="col-span-2 pt-2 border-t border-white/5"><p class="text-[10px] text-fg-muted">طلب خالص از هزینه‌ها (پرداخت برای دیگران منهای سهم هزینه‌های دیگران)</p><p class="text-xs font-bold">${formatToman(b.netClaimFromExpenses)}</p></div>
-          <div class="col-span-2"><p class="text-[10px] text-fg-muted">انتقال خالص (دریافتی منهای پرداختی)</p><p class="text-xs font-bold">${formatToman(b.netTransfer)}</p></div>
+          <div class="col-span-2"><p class="text-[10px] text-fg-muted">تراز تسویه هزینه‌ها</p><p class="text-xs font-bold">${formatToman(b.expenseSettlementPosition)}</p></div>
+          <div class="col-span-2"><p class="text-[10px] text-fg-muted">تراز تسویه سهم پروژه‌ها</p><p class="text-xs font-bold">${formatToman(b.projectSettlementPosition)}</p></div>
         </div>
         <div class="mt-3 pt-2 border-t border-white/5">
           <div class="flex items-center justify-between"><span class="text-[10px] ${positionColor}">${positionLabel}</span><span class="text-sm font-bold ${positionColor}">${formatToman(Math.abs(b.netPosition))}</span></div>
-          <p class="text-[9px] text-fg-muted mt-1">مانده تسویه هزینه‌ها = طلب خالص از هزینه‌ها − انتقال خالص</p>
+          <p class="text-[9px] text-fg-muted mt-1">مانده تسویه هزینه‌ها = طلب خالص از هزینه‌ها − انتقال خالصِ هزینه‌ها</p>
         </div>
       </div>
       <div class="glass rounded-xl p-3 mb-3">
@@ -495,7 +496,7 @@ function openPartnerDetails(partnerId) {
           <span class="text-sm font-bold ${b.overallPosition > 0 ? 'text-danger' : b.overallPosition < 0 ? 'text-success' : 'text-fg-muted'}">${b.overallPosition > 0 ? 'بدهکار' : b.overallPosition < 0 ? 'طلبکار' : 'تسویه'}</span>
         </div>
         <p class="text-lg font-bold mt-1 ${b.overallPosition > 0 ? 'text-danger' : b.overallPosition < 0 ? 'text-success' : 'text-fg-muted'}">${formatToman(Math.abs(b.overallPosition))}</p>
-        <p class="text-[9px] text-fg-muted mt-2">فرمول: اختلاف دریافتی از سهم وصول‌شده − طلب خالص هزینه‌ها + انتقال خالص</p>
+        <p class="text-[9px] text-fg-muted mt-2">فرمول: تراز پروژه‌ها − تراز هزینه‌ها؛ هر انتقال فقط در دسته خودش اثر می‌گذارد.</p>
         <p class="text-[9px] text-fg-muted">مقدار مثبت یعنی بدهکار به شرکا؛ مقدار منفی یعنی طلبکار از شرکا.</p>
       </div>
       <div class="flex gap-2">
