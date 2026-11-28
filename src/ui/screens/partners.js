@@ -321,6 +321,7 @@ function renderTransactionsTab(allPartners) {
       fromId: t.fromPartnerId,
       toId: t.toPartnerId,
       partnerIds: [t.fromPartnerId, t.toPartnerId],
+      purpose: t.purpose || 'project_settlement',
       note: t.note || ''
     });
   }
@@ -387,7 +388,7 @@ function renderTransactionsTab(allPartners) {
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2">
                   <p class="text-xs font-bold truncate">${item.fromName} → ${item.toName}</p>
-                  ${Badge({ variant: 'info', label: 'انتقال', classes: 'shrink-0' })}
+                  ${Badge({ variant: 'info', label: item.purpose === 'expense_settlement' ? 'تسویه هزینه‌ها' : 'تسویه پروژه‌ها', classes: 'shrink-0' })}
                 </div>
                 <p class="text-[10px] text-fg-muted mt-0.5">${formatJalali(item.date)} ${item.note ? '· ' + item.note : ''}</p>
               </div>
