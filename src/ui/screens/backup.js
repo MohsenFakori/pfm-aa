@@ -267,7 +267,7 @@ function importJSON(file) {
 }
 
 function validateBackupFile(backup) {
-  if (!backup || typeof backup !== 'object' || backup.version !== 1 || !backup.data || typeof backup.data !== 'object') {
+  if (!backup || typeof backup !== 'object' || Array.isArray(backup) || backup.version !== 1 || !backup.data || typeof backup.data !== 'object' || Array.isArray(backup.data)) {
     return { valid: false, message: 'ساختار یا نسخه فایل بکاپ پشتیبانی نمی‌شود' };
   }
 
