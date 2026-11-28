@@ -21,7 +21,6 @@ export function runIntegrityChecks(data = {}) {
   const partnerIds = new Set(partners.map(item => item.id));
   const projectIds = new Set(projects.map(item => item.id));
   const receiptIds = new Set(receipts.map(item => item.id));
-  const receiptById = new Map(receipts.map(item => [item.id, item]));
   const findings = [];
 
   const add = (severity, code, title, detail, recordId = null) => {
@@ -31,23 +30,30 @@ export function runIntegrityChecks(data = {}) {
   const allocationsByReceipt = new Map();
   const allocationsByProject = new Map();
   for (const allocation of allocations) {
-    allocationsByReceipt.set(
-      allocation.receiptId,
-      (allocationsByReceipt.get(allocation.receiptId) || 0) + Number(allocation.amount || 0)
-    );
-    allocationsByProject.set(
-      allocation.projectId,
-      (allocationsByProject.get(allocation.projectId) || 0) + Number(allocation.amount || 0)
-    );
+    const hasReceipt = receiptIds.has(allocation.receiptId);
+    const hasProject = projectIds.has(allocation.projectId);
+    const validAmount = isPositiveInteger(allocation.amount);
 
-    if (!receiptIds.has(allocation.receiptId)) {
+    if (!hasReceipt) {
       add('error', 'allocation-missing-receipt', 'تخصیص بدون دریافتی معتبر', 'یک تخصیص به دریافتی موجود یا فعال متصل نیست.', allocation.id);
     }
-    if (!projectIds.has(allocation.projectId)) {
+    if (!hasProject) {
       add('error', 'allocation-missing-project', 'تخصیص بدون پروژه معتبر', 'یک تخصیص به پروژه موجود یا فعال متصل نیست.', allocation.id);
     }
-    if (!isPositiveInteger(allocation.amount)) {
+    if (!validAmount) {
       add('error', 'allocation-invalid-amount', 'مبلغ تخصیص نامعتبر', 'مبلغ تخصیص باید عدد صحیح مثبت باشد.', allocation.id);
+    }
+
+    // فقط تخصیص‌های دارای ارجاع معتبر و مبلغ صحیح در محاسبات تشخیصی لحاظ می‌شوند.
+    if (hasReceipt && hasProject && validAmount) {
+      allocationsByReceipt.set(
+        allocation.receiptId,
+        (allocationsByReceipt.get(allocation.receiptId) || 0) + allocation.amount
+      );
+      allocationsByProject.set(
+        allocation.projectId,
+        (allocationsByProject.get(allocation.projectId) || 0) + allocation.amount
+      );
     }
   }
 
