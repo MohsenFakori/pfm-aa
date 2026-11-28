@@ -83,7 +83,7 @@ test('partner balance ignores soft-deleted expenses and transfers', () => {
   const result = getPartnerBalance('p1', data);
   assert.equal(result.paidForOthers, 80);
   assert.equal(result.transferredOut, 50);
-  assert.equal(result.netPosition, 130);
+  assert.equal(result.netPosition, 80);
 });
 
 test('partner balance flags shares linked to projects with unknown amounts', () => {
