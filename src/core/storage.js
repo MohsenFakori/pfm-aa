@@ -10,6 +10,17 @@ const KEYS = {
   AUTO_BACKUP: 'pfm:autoBackup'
 };
 
+let storageScope = 'default';
+
+export function setStorageScope(scope = 'default') {
+  storageScope = String(scope || 'default').replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function scopedKey(name) {
+  const key = KEYS[name];
+  return storageScope === 'default' ? key : `pfm:user:${storageScope}:${key}`;
+}
+
 const DEFAULT_SETTINGS = {
   userName: '',
   avatarColor: 'brand',
@@ -41,7 +52,7 @@ export const storage = {
   // === Settings ===
   getSettings() {
     try {
-      const raw = localStorage.getItem(KEYS.SETTINGS);
+      const raw = localStorage.getItem(scopedKey('SETTINGS'));
       return { ...DEFAULT_SETTINGS, ...(raw ? JSON.parse(raw) : {}) };
     } catch (e) {
       console.warn('Failed to read settings:', e);
@@ -52,7 +63,7 @@ export const storage = {
   saveSettings(settings) {
     try {
       const merged = { ...this.getSettings(), ...settings };
-      localStorage.setItem(KEYS.SETTINGS, JSON.stringify(merged));
+      localStorage.setItem(scopedKey('SETTINGS'), JSON.stringify(merged));
       return merged;
     } catch (e) {
       console.error('Failed to save settings:', e);
@@ -63,7 +74,7 @@ export const storage = {
   // === Custom Orders (مرتب‌سازی دستی) ===
   getCustomOrders() {
     try {
-      const raw = localStorage.getItem(KEYS.CUSTOM_ORDERS);
+      const raw = localStorage.getItem(scopedKey('CUSTOM_ORDERS'));
       return { ...DEFAULT_CUSTOM_ORDERS, ...(raw ? JSON.parse(raw) : {}) };
     } catch (e) {
       return { ...DEFAULT_CUSTOM_ORDERS };
@@ -78,7 +89,7 @@ export const storage = {
   saveCustomOrder(key, ids) {
     const orders = this.getCustomOrders();
     orders[key] = ids;
-    localStorage.setItem(KEYS.CUSTOM_ORDERS, JSON.stringify(orders));
+    localStorage.setItem(scopedKey('CUSTOM_ORDERS'), JSON.stringify(orders));
     return orders;
   },
 
@@ -89,7 +100,7 @@ export const storage = {
   // === Onboarding ===
   getOnboardingState() {
     try {
-      const raw = localStorage.getItem(KEYS.ONBOARDING);
+      const raw = localStorage.getItem(scopedKey('ONBOARDING'));
       return raw ? JSON.parse(raw) : { completed: false, step: 0 };
     } catch (e) {
       return { completed: false, step: 0 };
@@ -97,13 +108,13 @@ export const storage = {
   },
 
   saveOnboardingState(state) {
-    localStorage.setItem(KEYS.ONBOARDING, JSON.stringify(state));
+    localStorage.setItem(scopedKey('ONBOARDING'), JSON.stringify(state));
   },
 
   // === Dashboard Shortcuts ===
   getDashboardShortcuts() {
     try {
-      const raw = localStorage.getItem(KEYS.DASHBOARD_SHORTCUTS);
+      const raw = localStorage.getItem(scopedKey('DASHBOARD_SHORTCUTS'));
       return raw ? JSON.parse(raw) : DEFAULT_DASHBOARD_SHORTCUTS;
     } catch (e) {
       return DEFAULT_DASHBOARD_SHORTCUTS;
@@ -111,13 +122,13 @@ export const storage = {
   },
 
   saveDashboardShortcuts(ids) {
-    localStorage.setItem(KEYS.DASHBOARD_SHORTCUTS, JSON.stringify(ids));
+    localStorage.setItem(scopedKey('DASHBOARD_SHORTCUTS'), JSON.stringify(ids));
   },
 
   // === Auto Backup ===
   getAutoBackup() {
     try {
-      const raw = localStorage.getItem(KEYS.AUTO_BACKUP);
+      const raw = localStorage.getItem(scopedKey('AUTO_BACKUP'));
       return raw ? JSON.parse(raw) : { enabled: false, lastBackup: null, data: null };
     } catch (e) {
       return { enabled: false, lastBackup: null, data: null };
@@ -125,19 +136,19 @@ export const storage = {
   },
 
   saveAutoBackup(state) {
-    localStorage.setItem(KEYS.AUTO_BACKUP, JSON.stringify(state));
+    localStorage.setItem(scopedKey('AUTO_BACKUP'), JSON.stringify(state));
   },
 
   // === Clear all ===
   clearAll() {
-    Object.values(KEYS).forEach(key => localStorage.removeItem(key));
+    Object.keys(KEYS).forEach(name => localStorage.removeItem(scopedKey(name)));
   },
 
   // === Export all localStorage data (for backup) ===
   exportAll() {
     const result = {};
-    for (const [name, key] of Object.entries(KEYS)) {
-      const raw = localStorage.getItem(key);
+    for (const [name] of Object.entries(KEYS)) {
+      const raw = localStorage.getItem(scopedKey(name));
       result[name] = raw ? JSON.parse(raw) : null;
     }
     return result;
@@ -145,9 +156,9 @@ export const storage = {
 
   // === Import all localStorage data (from backup) ===
   importAll(data) {
-    for (const [name, key] of Object.entries(KEYS)) {
+    for (const [name] of Object.entries(KEYS)) {
       if (data[name] !== undefined && data[name] !== null) {
-        localStorage.setItem(key, JSON.stringify(data[name]));
+        localStorage.setItem(scopedKey(name), JSON.stringify(data[name]));
       }
     }
   }
