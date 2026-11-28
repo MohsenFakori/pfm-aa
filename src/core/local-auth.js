@@ -9,8 +9,10 @@ const SESSION_KEY = 'pfm:localAuth:session';
 const ITERATIONS = 210000;
 
 function readAccounts() {
-  try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '[]'); }
-  catch { return []; }
+  try {
+    const accounts = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '[]');
+    return Array.isArray(accounts) ? accounts : [];
+  } catch { return []; }
 }
 function writeAccounts(accounts) {
   localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
