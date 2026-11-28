@@ -6,6 +6,7 @@ import { navigate } from '../../core/router.js';
 import { showToast } from '../components/toast.js';
 import { AVATAR_COLORS } from '../../domain/validators.js';
 import { authService } from '../../core/auth.js';
+import { clearActiveSession } from '../../core/user-session.js';
 
 const COLOR_GRADIENTS = {
   brand: 'from-brand to-brand-dark',
@@ -75,8 +76,8 @@ export function renderProfilePage() {
 
       <section class="glass rounded-2xl p-4">
         <div class="flex items-center gap-2 mb-2"><i data-lucide="shield-check" class="w-4 h-4 text-fg-muted"></i><h3 class="text-sm font-bold">حساب کاربری</h3></div>
-        <p class="text-xs text-fg-muted leading-6 mb-3">ساختار ورود و عضویت برای اتصال به سرویس احراز هویت آماده شده است. در حال حاضر برنامه در حالت محلی و بدون حساب سرور اجرا می‌شود.</p>
-        <button onclick="window.__navigate('/auth')" class="w-full h-10 rounded-xl glass-strong text-xs font-medium">ورود و عضویت</button>
+        <p class="text-xs text-fg-muted leading-6 mb-3">حساب شما در همین مرورگر نگهداری می‌شود. هر حساب فضای داده جداگانه‌ای دارد؛ همگام‌سازی بین دستگاه‌ها هنوز وجود ندارد.</p>
+        <button onclick="window.__logoutUser()" class="w-full h-10 rounded-xl glass-strong text-xs font-medium">خروج از حساب کاربری</button>
       </section>
     </div>
   `;
@@ -85,7 +86,15 @@ export function renderProfilePage() {
   window.__saveUserProfile = saveUserProfile;
   window.__changeProfilePassword = changeProfilePassword;
   window.__navigate = path => navigate(path);
+  window.__logoutUser = logoutUser;
   if (window.lucide) window.lucide.createIcons();
+}
+
+async function logoutUser() {
+  await authService.logout();
+  clearActiveSession();
+  showToast('از حساب خارج شدید', 'success');
+  navigate('/auth');
 }
 
 async function changeProfilePassword() {
