@@ -77,16 +77,33 @@ export async function transaction(storeNames, mode, callback) {
     }
 
     let result;
-    Promise.resolve(callback(stores)).then(r => {
-      result = r;
-    }).catch(err => {
-      tx.error = err;
-      reject(err);
-    });
+    let callbackError = null;
 
-    tx.oncomplete = () => resolve(result);
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
+    const abortWithError = (error) => {
+      callbackError = error;
+      try {
+        tx.abort();
+      } catch {
+        // اگر تراکنش قبلاً خاتمه یافته باشد، خطای اصلی را نگه می‌داریم.
+      }
+    };
+
+    try {
+      Promise.resolve(callback(stores))
+        .then(value => {
+          result = value;
+        })
+        .catch(abortWithError);
+    } catch (error) {
+      abortWithError(error);
+    }
+
+    tx.oncomplete = () => {
+      if (callbackError) reject(callbackError);
+      else resolve(result);
+    };
+    tx.onerror = () => reject(callbackError || tx.error || new Error('Transaction failed'));
+    tx.onabort = () => reject(callbackError || tx.error || new Error('Transaction aborted'));
   });
 }
 
