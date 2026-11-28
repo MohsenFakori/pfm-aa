@@ -41,7 +41,9 @@ test('partner balance includes expense shares and partner transfers', () => {
   assert.equal(result.actualReceivedFromEmployers, 600);
   assert.equal(result.paidForOthers, 80);
   assert.equal(result.transferredOut, 50);
-  assert.equal(result.netPosition, 130);
+  assert.equal(result.netPosition, 80);
+  assert.equal(result.projectTransferredOut, 50);
+  assert.equal(result.expenseTransferredOut, 0);
 });
 
 test('partner settlement positions are opposite for a two-partner project', () => {
@@ -134,4 +136,28 @@ test('integrity check detects missing references and inconsistent shares', () =>
   const result = runIntegrityChecks(data);
   assert.ok(result.findings.some(item => item.code === 'project-missing-employer'));
   assert.ok(result.findings.some(item => item.code === 'project-share-total-mismatch'));
+});
+
+
+test('project and expense transfers affect only their own settlement category', () => {
+  const data = validData();
+  data.partnerTransfers = [
+    { id: 'tp', fromPartnerId: 'p1', toPartnerId: 'p2', amount: 50, date: '2026-11-11', purpose: 'project_settlement' },
+    { id: 'te', fromPartnerId: 'p1', toPartnerId: 'p2', amount: 30, date: '2026-11-12', purpose: 'expense_settlement' }
+  ];
+  const first = getPartnerBalance('p1', data);
+  const second = getPartnerBalance('p2', data);
+  assert.equal(first.projectTransferredOut, 50);
+  assert.equal(first.expenseTransferredOut, 30);
+  assert.equal(first.projectSettlementPosition, 190);
+  assert.equal(first.expenseSettlementPosition, 110);
+  assert.equal(first.overallPosition, 80);
+  assert.equal(second.overallPosition, -80);
+  assert.equal(first.overallPosition + second.overallPosition, 0);
+});
+
+test('legacy transfers without purpose remain project settlement transfers', () => {
+  const result = getPartnerBalance('p1', validData());
+  assert.equal(result.projectTransferredOut, 50);
+  assert.equal(result.expenseTransferredOut, 0);
 });
