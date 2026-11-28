@@ -104,7 +104,8 @@ export const reports = {
         employerCredits, expenses, partnerTransfers, dailyActivities, equipment, tags,
         settings: storage.getSettings ? storage.getSettings() : {},
         customOrders: storage.getAllCustomOrders ? storage.getAllCustomOrders() : (storage.getCustomOrders ? storage.getCustomOrders() : {}),
-        dashboardShortcuts: storage.getDashboardShortcuts ? storage.getDashboardShortcuts() : []
+        dashboardShortcuts: storage.getDashboardShortcuts ? storage.getDashboardShortcuts() : [],
+        autoBackup: storage.getAutoBackup ? storage.getAutoBackup() : null
       }
     };
   }
