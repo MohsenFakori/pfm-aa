@@ -1,7 +1,19 @@
 // src/core/db.js
 // لایه IndexedDB — فاز 1 PRD
 
-const DB_NAME = 'pfm_db';
+const DB_NAME_BASE = 'pfm_db';
+let databaseScope = 'default';
+
+export function setDatabaseScope(scope = 'default') {
+  const nextScope = String(scope || 'default').replace(/[^a-zA-Z0-9_-]/g, '_');
+  if (nextScope === databaseScope) return;
+  if (dbInstance) { dbInstance.close(); dbInstance = null; }
+  databaseScope = nextScope;
+}
+
+function getDatabaseName() {
+  return databaseScope === 'default' ? DB_NAME_BASE : `${DB_NAME_BASE}_${databaseScope}`;
+}
 const DB_VERSION = 1;
 
 // تعریف تمام storeها طبق PRD فاز 1
@@ -29,7 +41,7 @@ export function openDB() {
       return;
     }
 
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    const req = indexedDB.open(getDatabaseName(), DB_VERSION);
 
     req.onupgradeneeded = (event) => {
       const db = event.target.result;
