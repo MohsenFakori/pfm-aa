@@ -139,14 +139,13 @@ export function getProjectProgressPercent(projectId, data = null) {
 // بدهی از هزینه‌ها = سهم خودش از هزینه‌های دیگران (owedToOthers)
 // طلب خالص از هزینه‌ها = paidForOthers - owedToOthers
 //
-// انتقال دریافتی = پولی که از شرکا گرفته (طلبی را تسویه می‌کند یا بدهی ایجاد می‌کند)
-// انتقال پرداختی = پولی که به شرکا داده (بدهی را تسویه می‌کند یا طلب ایجاد می‌کند)
-// انتقال خالص = transferredIn - transferredOut (مثبت = پول دریافت کرده)
+// هر انتقال purpose دارد: project_settlement یا expense_settlement.
+// انتقال‌های قدیمی بدون purpose برای سازگاری، project_settlement محسوب می‌شوند.
+// انتقال پروژه فقط تراز سهم پروژه‌ها را تغییر می‌دهد؛ انتقال هزینه فقط تراز هزینه‌ها را.
 //
-// وضعیت نهایی = طلب خالص از هزینه‌ها - انتقال خالص دریافتی
-// مثبت = طلبکار (بیشتر پرداخته تا دریافتی)
-// منفی = بدهکار (بیشتر دریافت کرده تا پرداخته)
-// صفر = تسویه
+// netPosition هزینه‌ها: مثبت = طلبکار، منفی = بدهکار.
+// projectSettlementPosition و expenseSettlementPosition: مثبت = بدهکار.
+// تراز نهایی = تراز پروژه‌ها + تراز هزینه‌ها؛ مثبت = بدهکار به شرکا.
 export function getPartnerBalance(partnerId, data = null) {
   const useCache = !data;
   return cached(`partner:${partnerId}`, useCache, () => {
