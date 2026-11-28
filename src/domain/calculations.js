@@ -236,12 +236,14 @@ export function getPartnerBalance(partnerId, data = null) {
   // مثبت = بدهکار به سایر شرکا
   const shareDifference = allocatedReceivedFromEmployers - collectedShare;
   const projectSettlementPosition = shareDifference + projectNetTransfer;
-  const expenseSettlementPosition = netClaimFromExpenses - expenseNetTransfer;
-  const netPosition = expenseSettlementPosition;
+  // مثبت در netPosition یعنی طلبکار از بابت هزینه‌ها؛
+  // expenseSettlementPosition با قرارداد عمومی ترازها مثبت = بدهکار نگهداری می‌شود.
+  const netPosition = netClaimFromExpenses - expenseNetTransfer;
+  const expenseSettlementPosition = -netPosition;
   const overShare = Math.max(0, shareDifference);
   const underShare = Math.max(0, -shareDifference);
-  // تراز نهایی = تراز پروژه‌ها منهای تراز هزینه‌ها
-  const overallPosition = projectSettlementPosition - expenseSettlementPosition;
+  // هر دو تراز با قرارداد مثبت = بدهکار جمع می‌شوند.
+  const overallPosition = projectSettlementPosition + expenseSettlementPosition;
   const difference = overallPosition;
 
   let status = 'even';
