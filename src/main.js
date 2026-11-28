@@ -96,6 +96,12 @@ async function init() {
           navigate(settings.onboardingCompleted ? '/dashboard' : '/onboarding');
           return;
         }
+        if (!isSessionActive() && path === '/auth') {
+          document.getElementById('app').innerHTML = '<main id="page-content" class="min-h-screen"></main>';
+          handler(params);
+          if (window.lucide) window.lucide.createIcons();
+          return;
+        }
         // If onboarding not completed and route isn't onboarding → redirect to onboarding
         if (isSessionActive() && !settings.onboardingCompleted && path !== '/onboarding' && path !== '/auth') {
           navigate('/onboarding');
