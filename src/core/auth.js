@@ -1,9 +1,5 @@
-// src/core/auth.js
-// مرز احراز هویت برای اتصال آینده به بک‌اند.
-// این ماژول هیچ رمز عبور یا توکنی را در localStorage ذخیره نمی‌کند.
-
+// مرز احراز هویت؛ provider محلی فعلی بعداً با API جایگزین می‌شود.
 let provider = null;
-
 const REQUIRED_METHODS = ['login', 'register', 'logout', 'getSession', 'changePassword'];
 
 export const authService = {
@@ -13,35 +9,14 @@ export const authService = {
     }
     provider = authProvider;
   },
-
-  isConfigured() {
-    return Boolean(provider);
-  },
-
-  async login(credentials) {
-    return this.invoke('login', credentials);
-  },
-
-  async register(details) {
-    return this.invoke('register', details);
-  },
-
-  async logout() {
-    return this.invoke('logout');
-  },
-
-  async getSession() {
-    return this.invoke('getSession');
-  },
-
-  async changePassword(details) {
-    return this.invoke('changePassword', details);
-  },
-
+  isConfigured() { return Boolean(provider); },
+  async login(credentials) { return this.invoke('login', credentials); },
+  async register(details) { return this.invoke('register', details); },
+  async logout() { return this.invoke('logout'); },
+  async getSession() { return this.invoke('getSession'); },
+  async changePassword(details) { return this.invoke('changePassword', details); },
   async invoke(method, payload) {
-    if (!provider) {
-      throw new Error('Authentication backend is not configured.');
-    }
+    if (!provider) throw new Error('Authentication provider is not configured.');
     return provider[method](payload);
   }
 };
